@@ -637,9 +637,26 @@ export class LipoRankScene {
 
   exitGiantView() {
     this.cameraMode = 'overview';
+
+    // If an object was active, center camera on that specific object
+    let targetX = -3.0;
+    let targetLookY = 1.0;
+    let camY = 2.5;
+    let camZ = 16.0;
+
+    if (this.activeObjectId) {
+      const cfg = this.objectConfigs.find(c => c.id === this.activeObjectId);
+      if (cfg && cfg.position) {
+        targetX = cfg.position[0];
+        targetLookY = (cfg.targetHeight || 1.8) * 0.5;
+        camY = Math.max(2.2, targetLookY + 1.0);
+        camZ = Math.max(7.0, (cfg.targetHeight || 1.8) * 2.8);
+      }
+    }
+
     this.startCameraTransition(
-      new THREE.Vector3(-3.0, 2.5, 16.0),
-      new THREE.Vector3(-3.0, 1.0, 0)
+      new THREE.Vector3(targetX, camY, camZ),
+      new THREE.Vector3(targetX, targetLookY, 0)
     );
     this.onCameraModeChange('overview', null);
   }

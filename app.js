@@ -169,23 +169,27 @@ class LipoRankApp {
       });
     });
 
-    // 3. Carousel Navigation (< and >)
+    // 3. Carousel Navigation (< and >): Scroll ribbon by 1 item without moving 3D camera
     if (this.btnPrev) {
       this.btnPrev.addEventListener('click', () => {
-        const currIdx = COMPARISON_OBJECTS.findIndex(c => c.id === this.scene.activeObjectId);
-        const prevIdx = (currIdx - 1 + COMPARISON_OBJECTS.length) % COMPARISON_OBJECTS.length;
-        const targetId = COMPARISON_OBJECTS[prevIdx].id;
-        this.scene.enterGiantView(targetId);
-        this.updateObjectTabs(targetId);
+        if (!this.labelsOverlay) return;
+        const itemWidth = this.labelsOverlay.clientWidth / 5;
+        this.labelsOverlay.scrollBy({ left: -itemWidth, behavior: 'smooth' });
       });
     }
     if (this.btnNext) {
       this.btnNext.addEventListener('click', () => {
-        const currIdx = COMPARISON_OBJECTS.findIndex(c => c.id === this.scene.activeObjectId);
-        const nextIdx = (currIdx + 1) % COMPARISON_OBJECTS.length;
-        const targetId = COMPARISON_OBJECTS[nextIdx].id;
-        this.scene.enterGiantView(targetId);
-        this.updateObjectTabs(targetId);
+        if (!this.labelsOverlay) return;
+        const itemWidth = this.labelsOverlay.clientWidth / 5;
+        this.labelsOverlay.scrollBy({ left: itemWidth, behavior: 'smooth' });
+      });
+    }
+
+    // Realtime Standardizer Part Selector change listener
+    const selPart = document.getElementById('sel-surgery-part');
+    if (selPart) {
+      selPart.addEventListener('change', () => {
+        this.updateAllTexts(this.currentLiters, this.scene.activeObjectId);
       });
     }
 
@@ -339,14 +343,16 @@ class LipoRankApp {
     if (this.walkinHud) {
       this.walkinHud.classList.toggle('active', isWalkin);
     }
+    // Keep labelsOverlay visible in giant mode so user can click other tabs; hide only in walk-in mode
     if (this.labelsOverlay) {
-      this.labelsOverlay.classList.toggle('hidden', isGiant || isWalkin);
+      this.labelsOverlay.classList.toggle('hidden', isWalkin);
     }
     if (this.giantBtnText) {
       this.giantBtnText.textContent = (isWalkin || isGiant) ? '전체보기 복귀' : '3D 세상 직접 들어가기';
     }
     if (isGiant && cfg) {
       this.updateGiantCard(cfg.id);
+      this.updateObjectTabs(cfg.id);
     }
     this.refreshIcons();
   }
@@ -397,7 +403,12 @@ class LipoRankApp {
       this.cubeCountBadge.textContent = `${cubeCount} 개 (${formattedL}L = ${cubeCount}m³)`;
     }
 
-    // Update Clinical Surgery Equivalent Statistics (Body parts)
+    // Update Clinical Surgery Equivalent Statistics (Body parts with standard multiplier)
+    const selPart = document.getElementById('sel-surgery-part');
+    const partMultiplier = selPart ? parseFloat(selPart.value) || 3.0 : 3.0;
+    const partName = selPart ? selPart.options[selPart.selectedIndex].text.split('(')[0].trim() : '복부 360도';
+
+    const standardizedCases = Math.round(liters / partMultiplier);
     const abCases = Math.round(liters / 3.0); // 3,000cc
     const thighCases = Math.round(liters / 2.5); // 2,500cc
     const armCases = Math.round(liters / 1.0); // 1,000cc
@@ -405,18 +416,21 @@ class LipoRankApp {
 
     const equivSummary = document.getElementById('clinical-equiv-text');
     if (equivSummary) {
-      equivSummary.textContent = `복부 대용량 약 ${abCases.toLocaleString()}회 / 허벅지 약 ${thighCases.toLocaleString()}회 집도 상당`;
+      equivSummary.innerHTML = `선택 부위 표준: <strong>${standardizedCases.toLocaleString()}회 집도</strong> (총 ${formattedL}L)`;
     }
 
-    const abEl = document.getElementById('ab-count-text');
+    const formulaEl = document.getElementById('part-summary-formula');
+    if (formulaEl) {
+      formulaEl.innerHTML = `표준화 공식: 총 ${formattedL}L ÷ 1회 [${partName}] ${partMultiplier}L = <strong>총 ${standardizedCases.toLocaleString()}회 집도 실적</strong>`;
+    }
+
     const thighEl = document.getElementById('thigh-count-text');
     const armEl = document.getElementById('arm-count-text');
     const chinEl = document.getElementById('chin-count-text');
 
-    if (abEl) abEl.textContent = `약 ${abCases.toLocaleString()}회 집도분`;
-    if (thighEl) thighEl.textContent = `약 ${thighCases.toLocaleString()}회 집도분`;
-    if (armEl) armEl.textContent = `약 ${armCases.toLocaleString()}회 집도분`;
-    if (chinEl) chinEl.textContent = `약 ${chinCases.toLocaleString()}회 집도분`;
+    if (thighEl) thighEl.textContent = `${thighCases.toLocaleString()}회`;
+    if (armEl) armEl.textContent = `${armCases.toLocaleString()}회`;
+    if (chinEl) chinEl.textContent = `${chinCases.toLocaleString()}회`;
 
     if (this.centerHighlightAmount) {
       this.centerHighlightAmount.textContent = `${formattedL}L`;

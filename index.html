@@ -143,16 +143,6 @@
               <div class="label-title">람보르기니</div>
               <div class="label-vol">4,700L · 1.16m</div>
             </div>
-            
-            <!-- Center Permanent Official SAMPLE Tower -->
-            <div id="center-highlight-tab" class="center-highlight-box" data-object-id="sample_tower" title="공인 1위 SAMPLE 원장 1m³ 큐브 탑">
-              <button class="btn-vis-toggle" data-vis-id="sample_tower" title="공인 탑 숨기기/보이기">
-                <i data-lucide="eye" class="icon-xs"></i>
-              </button>
-              <div class="tag">공인 1위 SAMPLE 원장</div>
-              <div id="center-highlight-amount" class="amount">4,820L</div>
-              <div id="center-highlight-ratio" class="ratio-badge">4.82m 높이 돌파</div>
-            </div>
 
             <div class="object-label-tab" data-object-id="cow">
               <button class="btn-vis-toggle" data-vis-id="cow" title="가시성 토글">
@@ -257,15 +247,27 @@
         <div class="stage-bottom-strip">
           <div class="bottom-control-header">
             <div>
-              <span class="control-label">내 수술량 조절 (슬라이더 조절 시 3D 카메라가 내 큐브로 자동 줌인)</span>
+              <span class="control-label">내 수술량 조절 (슬라이더 조절 시 3D 카메라 및 큐브 실시간 동기화)</span>
               <div id="current-vol-text" class="vol-big-text">4,820 L</div>
             </div>
 
             <div class="bottom-cta-group">
-              <!-- Clinical Surgery Part Equivalent Badge -->
-              <div class="clinical-equiv-badge" id="clinical-equiv-badge" title="임상 기준 부위별 평균 환산">
+              <!-- Clinical Part Standardizer Selector (Admerest style) -->
+              <div class="part-standardizer-box">
+                <span class="standardizer-label"><i data-lucide="sliders" class="icon-xs"></i> 1회 수술 표준 부위:</span>
+                <select id="sel-surgery-part" class="sel-surgery-part">
+                  <option value="3.0" selected>복부 360도 대용량 (3.0L / 회)</option>
+                  <option value="2.5">허벅지 전체 둘레 (2.5L / 회)</option>
+                  <option value="1.0">팔뚝 및 부유방 (1.0L / 회)</option>
+                  <option value="0.5">러브핸들 국소 (0.5L / 회)</option>
+                  <option value="0.1">이중턱/얼굴 윤곽 (0.1L / 회)</option>
+                </select>
+              </div>
+
+              <!-- Standardized Cumulative Surgery Count Badge -->
+              <div class="clinical-equiv-badge" id="clinical-equiv-badge" title="선택한 부위 표준 추출량 기준 환산 총 수술 횟수">
                 <i data-lucide="activity" class="icon-xs"></i>
-                <span id="clinical-equiv-text">복부 대용량 약 1,607회 / 허벅지 약 1,928회 상당</span>
+                <span id="clinical-equiv-text">표준 환산 수술 횟수: <strong>1,607회</strong> (총 4,820L)</span>
               </div>
 
               <div class="unit-toggle">
@@ -294,10 +296,13 @@
 
           <!-- Clinical Surgery Equivalent Guide Panel -->
           <div class="clinical-info-strip">
-            <div class="clinical-pill"><span class="pill-dot abdomen"></span> 복부 360도 (평균 3,000cc): <strong id="ab-count-text">약 1,607회 집도분</strong></div>
-            <div class="clinical-pill"><span class="pill-dot thigh"></span> 허벅지 전체 (평균 2,500cc): <strong id="thigh-count-text">약 1,928회 집도분</strong></div>
-            <div class="clinical-pill"><span class="pill-dot arm"></span> 팔뚝/부유방 (평균 1,000cc): <strong id="arm-count-text">약 4,820회 집도분</strong></div>
-            <div class="clinical-pill"><span class="pill-dot chin"></span> 이중턱/얼굴 (평균 100cc): <strong id="chin-count-text">약 48,200회 집도분</strong></div>
+            <div class="clinical-pill active" id="pill-part-current">
+              <span class="pill-dot abdomen"></span>
+              <span id="part-summary-formula">공식: 총 흡입량 4,820L ÷ 1회 표준 3.0L = <strong>총 1,607회 집도 실적</strong></span>
+            </div>
+            <div class="clinical-pill"><span class="pill-dot thigh"></span> 허벅지(2.5L) 기준 시: <strong id="thigh-count-text">1,928회</strong></div>
+            <div class="clinical-pill"><span class="pill-dot arm"></span> 팔뚝(1.0L) 기준 시: <strong id="arm-count-text">4,820회</strong></div>
+            <div class="clinical-pill"><span class="pill-dot chin"></span> 이중턱(0.1L) 기준 시: <strong id="chin-count-text">48,200회</strong></div>
           </div>
         </div>
 
