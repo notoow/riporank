@@ -1,0 +1,721 @@
+/* LipoRank - Clean Minimal Medical 3D Platform */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+:root {
+  --primary: #0953ff;
+  --primary-hover: #0043d9;
+  --pink: #ff2a7a;
+  --pink-light: #fff0f5;
+  --ink: #111827;
+  --ink-secondary: #4b5563;
+  --ink-muted: #9ca3af;
+  --line: #f1f5f9;
+  --bg: #ffffff;
+  --card: #ffffff;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 24px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+  background-color: #fbfcfe;
+  color: var(--ink);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Lucide Standard */
+.lucide, [data-lucide] {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.icon-sm { width: 14px; height: 14px; stroke-width: 2px; }
+.icon-lg { width: 24px; height: 24px; stroke-width: 1.8px; }
+
+/* 1. Header (Exact Match to User Mockup 3) */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid #f1f5f9;
+  height: 64px;
+  display: flex;
+  align-items: center;
+}
+
+.header-container {
+  max-width: 1560px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.6px;
+  color: #111827;
+}
+
+.logo-lr {
+  color: #ff2a7a;
+  font-weight: 950;
+  font-size: 24px;
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.nav-link {
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  transition: color 0.15s;
+}
+
+.nav-link:hover, .nav-link.active {
+  color: #ff2a7a;
+  font-weight: 700;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.search-pill {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-pill input {
+  width: 240px;
+  height: 38px;
+  border-radius: 20px;
+  border: 1px solid #e5e7eb;
+  padding: 0 36px 0 16px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  background: #ffffff;
+  transition: all 0.2s;
+}
+
+.search-pill input:focus {
+  width: 280px;
+  border-color: #ff2a7a;
+  box-shadow: 0 0 0 3px rgba(255, 42, 122, 0.1);
+}
+
+.search-pill .search-icon {
+  position: absolute;
+  right: 12px;
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.btn-bell {
+  background: transparent;
+  border: none;
+  color: #4b5563;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+}
+
+.bell-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff2a7a;
+}
+
+.btn-auth {
+  border: 1px solid #fbcfe8;
+  background: #ffffff;
+  color: #ff2a7a;
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-auth:hover {
+  background: #fff1f2;
+}
+
+.btn-main-register {
+  background: linear-gradient(135deg, #0953ff, #2563eb);
+  color: white;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(9, 83, 255, 0.25);
+  transition: all 0.2s;
+}
+
+.btn-main-register:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(9, 83, 255, 0.35);
+}
+
+/* 2. Main Page Layout (Full Width Clean View) */
+.page-wrap {
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 24px 32px 60px 32px;
+}
+
+/* 3. 3D Stage Card */
+.stage-card {
+  background: #ffffff;
+  border: 1px solid #edf2f7;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.04);
+  position: relative;
+  overflow: hidden;
+}
+
+.stage-top-bar {
+  padding: 20px 28px 12px 28px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.stage-headline {
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.stage-sub {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.stage-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.unit-capsule {
+  display: flex;
+  background: #f3f4f6;
+  padding: 3px;
+  border-radius: 8px;
+}
+
+.unit-tab {
+  border: none;
+  background: transparent;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.unit-tab.active {
+  background: #ffffff;
+  color: #111827;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.btn-share {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 3D Viewport & Overlay Labels */
+.viewport-wrapper {
+  position: relative;
+  width: 100%;
+  height: 520px;
+  background: #fbfcfe;
+}
+
+#canvas-container {
+  width: 100%;
+  height: 100%;
+}
+
+/* Floating Action Buttons in 3D Canvas (Left Sidebar style) */
+.stage-floating-btns {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 10;
+}
+
+.stage-btn {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid #e5e7eb;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #374151;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  transition: all 0.15s;
+}
+
+.stage-btn:hover {
+  background: #ffffff;
+  color: #ff2a7a;
+  border-color: #ff2a7a;
+}
+
+.stage-btn.active {
+  background: #ff2a7a;
+  color: white;
+  border-color: #ff2a7a;
+}
+
+/* Floating Clean Labels over 3D Models (Shifted right to avoid button overlap) */
+.stage-labels-overlay {
+  position: absolute;
+  top: 18px;
+  left: 130px;
+  right: 28px;
+  display: grid;
+  grid-template-columns: 1fr 1.3fr 1.3fr 1.3fr 1.3fr 1fr;
+  align-items: center;
+  justify-items: center;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.object-label {
+  text-align: center;
+}
+
+.label-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.label-vol {
+  font-size: 12px;
+  font-weight: 500;
+  color: #9ca3af;
+  margin-top: 1px;
+}
+
+/* Center Highlight Box for Liposuction Volume */
+.center-highlight-box {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  border: 2px solid #8b5cf6;
+  border-radius: 16px;
+  padding: 6px 20px;
+  text-align: center;
+  box-shadow: 0 6px 20px -4px rgba(139, 92, 246, 0.25);
+}
+
+.center-highlight-box .tag {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6d28d9;
+}
+
+.center-highlight-box .amount {
+  font-size: 20px;
+  font-weight: 900;
+  color: #6d28d9;
+  letter-spacing: -0.5px;
+}
+
+/* Bottom Controls Strip */
+.stage-bottom-strip {
+  padding: 24px 32px;
+  border-top: 1px solid #f1f5f9;
+  background: #ffffff;
+}
+
+.slider-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.vol-big-text {
+  font-size: 28px;
+  font-weight: 900;
+  color: #0953ff;
+  letter-spacing: -0.5px;
+}
+
+.slider-input {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: #e5e7eb;
+  outline: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.slider-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #0953ff;
+  border: 3px solid white;
+  box-shadow: 0 2px 8px rgba(9, 83, 255, 0.4);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.slider-input::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.quick-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.chip {
+  padding: 7px 16px;
+  border-radius: 20px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.chip:hover {
+  border-color: #0953ff;
+  color: #0953ff;
+}
+
+.chip.active {
+  background: #0953ff;
+  color: white;
+  border-color: #0953ff;
+}
+
+/* 4. Comparison Cards Grid */
+.comparison-section {
+  margin-top: 36px;
+}
+
+.sec-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.sec-desc {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 16px;
+}
+
+.comp-card {
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  border-radius: var(--radius-md);
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.comp-card:hover {
+  border-color: #0953ff;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -4px rgba(9, 83, 255, 0.1);
+}
+
+.comp-icon {
+  color: #0953ff;
+  margin-bottom: 12px;
+}
+
+.comp-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.comp-ratio {
+  font-size: 22px;
+  font-weight: 900;
+  color: #0953ff;
+  margin: 4px 0;
+}
+
+.comp-detail {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+/* 5. Doctor Leaderboard */
+.leaderboard-wrap {
+  margin-top: 36px;
+  background: #ffffff;
+  border: 1px solid #edf2f7;
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+
+.table-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 20px;
+}
+
+.doc-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.doc-table th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  color: #9ca3af;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.doc-table td {
+  padding: 16px;
+  border-bottom: 1px solid #f8fafc;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.doc-table tr:hover td {
+  background: #fbfcfe;
+}
+
+.rank-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.rank-1 { background: #fef3c7; color: #b45309; }
+.rank-2 { background: #f1f5f9; color: #475569; }
+.rank-3 { background: #ffedd5; color: #c2410c; }
+.rank-n { background: #f8fafc; color: #9ca3af; }
+
+.doc-profile-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.doc-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.doc-info-text .name {
+  font-weight: 800;
+  color: #111827;
+  font-size: 14px;
+}
+
+.doc-info-text .sub {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.btn-fill-beaker {
+  background: #eff6ff;
+  color: #0953ff;
+  border: 1px solid #bfdbfe;
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+}
+
+.btn-fill-beaker:hover {
+  background: #0953ff;
+  color: white;
+  border-color: #0953ff;
+}
+
+/* Modal: 내 랭크 등록하기 */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.6);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-box {
+  background: #ffffff;
+  border-radius: 24px;
+  max-width: 520px;
+  width: 100%;
+  padding: 32px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  position: relative;
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+}
+
+.form-group {
+  margin-bottom: 14px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 5px;
+}
+
+.form-group input, .form-group select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+
+.form-group input:focus, .form-group select:focus {
+  border-color: #0953ff;
+}
+
+.btn-modal-submit {
+  width: 100%;
+  background: #0953ff;
+  color: white;
+  border: none;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 800;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-top: 10px;
+}
