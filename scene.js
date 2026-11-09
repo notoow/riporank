@@ -568,9 +568,20 @@ export class LipoRankScene {
 
     this.activeObjectId = objectId;
     if (objectId) {
-      // Ensure object is visible even if giant landmark
+      // Ensure object is visible even if previously hidden & sync UI toggle button
       if (this.modelHolders[objectId]) {
         this.modelHolders[objectId].visible = true;
+        const btn = document.querySelector(`.btn-vis-toggle[data-vis-id="${objectId}"]`);
+        if (btn) {
+          btn.classList.remove('is-off');
+          const icon = btn.querySelector('i[data-lucide]');
+          if (icon) {
+            icon.setAttribute('data-lucide', 'eye');
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+              window.lucide.createIcons();
+            }
+          }
+        }
       }
       this.applyGlassFill(objectId, this.selectedLiters);
     }
