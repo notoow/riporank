@@ -1,6 +1,6 @@
 /**
  * LipoRank Verified Doctor Data Store
- * Minimal official record (1 single verified reference doctor, like admerest)
+ * Manages official verified doctors & user's private pending tower
  */
 
 export const initialDoctors = [
@@ -15,7 +15,8 @@ export const initialDoctors = [
     totalCases: 1967,
     avgCcPerCase: 2450,
     pureFatRatio: 89,
-    status: "verified",
+    status: "verified", // Official verified
+    isOfficial: true,
     verifiedDate: "2026-10-15",
     badge: "CRM 전산 실시간 연동 공인",
     avatar: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80",
@@ -24,7 +25,7 @@ export const initialDoctors = [
 ];
 
 const STORAGE_KEY = "liporank_doctors_data";
-const APPLICATIONS_KEY = "liporank_doctor_applications";
+const MY_PENDING_KEY = "liporank_my_pending_tower";
 
 export function getDoctors() {
   try {
@@ -39,36 +40,40 @@ export function getDoctors() {
   return initialDoctors;
 }
 
-export function saveDoctors(doctors) {
+export function getMyPendingTower() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(doctors));
+    const saved = localStorage.getItem(MY_PENDING_KEY);
+    if (saved) {
+      return JSON.parse(saved);
+    }
   } catch (e) {
-    console.error("Save doctors failed:", e);
+    return null;
   }
+  return null;
 }
 
 export function submitDoctorApplication(formData) {
   const application = {
-    id: "app-" + Date.now(),
+    id: "my-tower-" + Date.now(),
     submittedAt: new Date().toISOString(),
     name: formData.name,
     licenseNo: formData.licenseNo,
     clinic: formData.clinic,
     specialty: formData.specialty || "전신 체형 특화",
-    estimatedLiters: Number(formData.liters) || 0,
-    estimatedCases: Number(formData.cases) || 0,
+    totalLiters: Number(formData.liters) || 0,
+    totalCases: Number(formData.cases) || 0,
     avgCcPerCase: Number(formData.cases) > 0 ? Math.round((Number(formData.liters) * 1000) / Number(formData.cases)) : 2000,
     crmSystem: formData.crmSystem,
     contact: formData.contact,
-    status: "pending"
+    status: "pending", // Unverified, visible only to this user
+    isMyPrivate: true,
+    badge: "공인 심사 진행중 (나만 보기)"
   };
 
   try {
-    const existing = JSON.parse(localStorage.getItem(APPLICATIONS_KEY) || "[]");
-    existing.unshift(application);
-    localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(existing));
+    localStorage.setItem(MY_PENDING_KEY, JSON.stringify(application));
   } catch (e) {
-    console.error("Save application failed:", e);
+    console.error("Save pending application failed:", e);
   }
 
   return application;

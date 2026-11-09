@@ -1,8 +1,12 @@
 /**
  * LipoRank High-Fidelity 3D Scene
- * Perfectly spaced 5 Objects in pure studio lighting:
- * [Fiji Water] -- [Olympic Pool] -- [Lamborghini] -- [Cybertruck] -- [Statue of Liberty]
- * Feature: Active Object converts to Crystal Glass Shell with Golden Fat fluid fill & surface meniscus
+ * Lineup: [Fiji Water] -- [Olympic Pool] -- [Lamborghini] -- [★ 1m³ Glass Cube Tower] -- [Cybertruck] -- [Statue of Liberty]
+ * Features:
+ * 1. 2.8s Golden Time Fluid Fill Animation (Cubic Ease-Out)
+ * 2. 1m³ (1,000L) Modular Crystal Glass Cube Tower proportionally scaled (4.82m height)
+ * 3. Giant Hero View Cinematic Interaction (low angle immersive framing)
+ * 4. Sunset Golden Hour Interactive Lighting Toggle (admerest style)
+ * 5. Official vs Private Pending Tower Placement Logic
  */
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
@@ -14,26 +18,50 @@ export class LipoRankScene {
     this.container = canvasContainer;
     this.onVolumeChange = options.onVolumeChange || (() => {});
     this.onObjectChange = options.onObjectChange || (() => {});
-    this.selectedLiters = options.initialLiters || 4820; // Default: Top rank doctor 4,820L
+    this.onCameraModeChange = options.onCameraModeChange || (() => {});
 
+    this.selectedLiters = options.initialLiters || 4820; // 1위 김지훈 대표원장 4,820L
     this.activeObjectId = options.initialObjectId || 'lamborghini';
     this.objectConfigs = COMPARISON_OBJECTS;
 
+    // Camera Modes: 'overview', 'giant'
+    this.cameraMode = 'overview';
+    this.isSunsetMode = false;
+
+    // Fill Animation parameters (2.8s Golden Time)
+    this.fillDuration = 2.8;
+    this.fillStartTime = 0;
+    this.isFilling = false;
+    this.startFillPct = 0;
+    this.targetFillPct = 1.0;
+    this.currentFillPct = 1.0;
+
+    // Camera transition parameters
+    this.isTransitioningCamera = false;
+    this.camStartPos = new THREE.Vector3();
+    this.camTargetPos = new THREE.Vector3(0, 0.58, 8.4);
+    this.lookAtStart = new THREE.Vector3();
+    this.lookAtTarget = new THREE.Vector3(0, 0.58, 0);
+    this.camTransitionProgress = 1.0;
+
     this.loader = new GLTFLoader();
-    this.models = {};           // outer shell scenes
-    this.modelHolders = {};      // holder groups on stage
-    this.originalMaterials = new Map(); // cache original materials
-    this.fatMeshes = {};        // internal fat duplicate meshes
-    this.clipPlanes = {};       // clipping planes per object
-    this.targetFillPcts = {};   // target fill percent [0, 1]
-    this.currentFillPcts = {};  // animated current fill percent
-    this.worldBounds = {};      // accurate world bounding boxes
+    this.models = {};
+    this.modelHolders = {};
+    this.originalMaterials = new Map();
+    this.fatMeshes = {};
+    this.clipPlanes = {};
+    this.worldBounds = {};
+
+    // Cube Towers
+    this.cubeTowerGroup = new THREE.Group();
+    this.privateTowerGroup = new THREE.Group();
 
     this.init();
     this.initLights();
     this.initStudioFloor();
     this.initMaterials();
     this.loadAllObjects();
+    this.buildCubeTower(this.selectedLiters);
     this.initControls();
     this.initEvents();
     this.animate();
@@ -41,15 +69,16 @@ export class LipoRankScene {
 
   init() {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0xfcfdfe);
+    this.studioBgColor = new THREE.Color(0xfcfdfe);
+    this.sunsetBgColor = new THREE.Color(0xffedd5);
+    this.scene.background = this.studioBgColor.clone();
     this.scene.fog = new THREE.FogExp2(0xfcfdfe, 0.012);
 
     const width = this.container.clientWidth || window.innerWidth;
     const height = this.container.clientHeight || window.innerHeight;
 
-    // Front-parallel eye-level perspective with wide view for 5 objects
-    this.camera = new THREE.PerspectiveCamera(26, width / height, 0.1, 100);
-    this.camera.position.set(0, 0.58, 8.2);
+    this.camera = new THREE.PerspectiveCamera(26, width / height, 0.1, 120);
+    this.camera.position.set(0, 0.58, 8.4);
     this.camera.lookAt(0, 0.58, 0);
 
     this.renderer = new THREE.WebGLRenderer({
@@ -63,15 +92,18 @@ export class LipoRankScene {
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.localClippingEnabled = true;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.14;
+    this.renderer.toneMappingExposure = 1.15;
 
     this.container.appendChild(this.renderer.domElement);
     this.clock = new THREE.Clock();
+
+    this.scene.add(this.cubeTowerGroup);
+    this.scene.add(this.privateTowerGroup);
   }
 
   initLights() {
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xf1f5f9, 2.0);
-    this.scene.add(hemiLight);
+    this.hemiLight = new THREE.HemisphereLight(0xffffff, 0xf1f5f9, 2.0);
+    this.scene.add(this.hemiLight);
 
     this.mainLight = new THREE.DirectionalLight(0xffffff, 2.5);
     this.mainLight.position.set(7, 14, 9);
@@ -79,42 +111,43 @@ export class LipoRankScene {
     this.mainLight.shadow.mapSize.width = 2048;
     this.mainLight.shadow.mapSize.height = 2048;
     this.mainLight.shadow.camera.near = 0.5;
-    this.mainLight.shadow.camera.far = 35;
-    this.mainLight.shadow.camera.left = -10;
-    this.mainLight.shadow.camera.right = 10;
-    this.mainLight.shadow.camera.top = 8;
+    this.mainLight.shadow.camera.far = 40;
+    this.mainLight.shadow.camera.left = -12;
+    this.mainLight.shadow.camera.right = 12;
+    this.mainLight.shadow.camera.top = 10;
     this.mainLight.shadow.camera.bottom = -4;
     this.mainLight.shadow.bias = -0.0001;
     this.scene.add(this.mainLight);
 
-    const fillLight = new THREE.DirectionalLight(0xf1f5f9, 1.3);
-    fillLight.position.set(-8, 7, 5);
-    this.scene.add(fillLight);
+    this.fillLight = new THREE.DirectionalLight(0xf1f5f9, 1.3);
+    fillLight: this.fillLight.position.set(-8, 7, 5);
+    this.scene.add(this.fillLight);
 
-    // Warm golden glow behind active fat model
-    this.fatGlow = new THREE.PointLight(0xf59e0b, 1.8, 6);
-    this.fatGlow.position.set(0, 0.8, -1.0);
+    this.fatGlow = new THREE.PointLight(0xf59e0b, 1.8, 8);
+    this.fatGlow.position.set(-0.3, 0.8, -1.0);
     this.scene.add(this.fatGlow);
+
+    this.sunsetRimLight = new THREE.DirectionalLight(0xf97316, 0.0);
+    this.sunsetRimLight.position.set(-10, 4, -8);
+    this.scene.add(this.sunsetRimLight);
   }
 
   initStudioFloor() {
-    const floorGeo = new THREE.PlaneGeometry(80, 80);
+    const floorGeo = new THREE.PlaneGeometry(90, 90);
     const floorMat = new THREE.ShadowMaterial({ opacity: 0.12 });
-    const shadowFloor = new THREE.Mesh(floorGeo, floorMat);
-    shadowFloor.rotation.x = -Math.PI / 2;
-    shadowFloor.position.y = 0;
-    shadowFloor.receiveShadow = true;
-    this.scene.add(shadowFloor);
+    this.shadowFloor = new THREE.Mesh(floorGeo, floorMat);
+    this.shadowFloor.rotation.x = -Math.PI / 2;
+    this.shadowFloor.receiveShadow = true;
+    this.scene.add(this.shadowFloor);
 
     const baseMat = new THREE.MeshBasicMaterial({ color: 0xfcfdfe });
-    const baseFloor = new THREE.Mesh(floorGeo, baseMat);
-    baseFloor.rotation.x = -Math.PI / 2;
-    baseFloor.position.y = -0.002;
-    this.scene.add(baseFloor);
+    this.baseFloor = new THREE.Mesh(floorGeo, baseMat);
+    this.baseFloor.rotation.x = -Math.PI / 2;
+    this.baseFloor.position.y = -0.002;
+    this.scene.add(this.baseFloor);
   }
 
   initMaterials() {
-    // 1. Crystal Glass Shell Material
     this.glassMaterial = new THREE.MeshPhysicalMaterial({
       color: new THREE.Color(0xffffff),
       metalness: 0.05,
@@ -127,6 +160,22 @@ export class LipoRankScene {
       reflectivity: 0.9,
       clearcoat: 1.0,
       clearcoatRoughness: 0.05,
+      side: THREE.DoubleSide
+    });
+
+    // 1m³ Glass Cube Outer Shell (Clear Crystal Glass)
+    this.cubeGlassMaterial = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color(0xffffff),
+      metalness: 0.05,
+      roughness: 0.06,
+      transmission: 0.96,
+      thickness: 0.6,
+      ior: 1.52,
+      transparent: true,
+      opacity: 0.35,
+      reflectivity: 0.95,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.04,
       side: THREE.DoubleSide
     });
   }
@@ -142,7 +191,6 @@ export class LipoRankScene {
           const root = gltf.scene;
           this.models[cfg.id] = root;
 
-          // Cache original materials
           root.traverse(c => {
             if (c.isMesh) {
               this.originalMaterials.set(c, c.material);
@@ -151,14 +199,12 @@ export class LipoRankScene {
             }
           });
 
-          // Container group for outer shell + inner fat
           const holder = new THREE.Group();
           holder.name = cfg.id;
+          holder.userData = { config: cfg };
 
-          // 1. Outer Shell
           holder.add(root);
 
-          // 2. Inner Fat Mesh (Duplicate)
           const fatMesh = root.clone();
           const clipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 100);
           this.clipPlanes[cfg.id] = clipPlane;
@@ -180,12 +226,11 @@ export class LipoRankScene {
               c.castShadow = false;
             }
           });
-          fatMesh.scale.setScalar(0.99); // snug fit inside glass
+          fatMesh.scale.setScalar(0.99);
           fatMesh.visible = false;
           holder.add(fatMesh);
           this.fatMeshes[cfg.id] = fatMesh;
 
-          // Normalize size & place firmly on floor y = 0
           if (cfg.rotation) {
             holder.rotation.set(cfg.rotation[0], cfg.rotation[1], cfg.rotation[2]);
           }
@@ -212,10 +257,7 @@ export class LipoRankScene {
 
           this.lineupGroup.add(holder);
           this.modelHolders[cfg.id] = holder;
-          this.targetFillPcts[cfg.id] = 0;
-          this.currentFillPcts[cfg.id] = 0;
 
-          // Compute accurate world bounds
           holder.updateMatrixWorld(true);
           const worldBox = new THREE.Box3().setFromObject(holder);
           this.worldBounds[cfg.id] = {
@@ -224,21 +266,168 @@ export class LipoRankScene {
             height: worldBox.max.y - worldBox.min.y
           };
 
-          // If this is the active object, apply glass fill immediately
           if (cfg.id === this.activeObjectId) {
             this.applyGlassFill(cfg.id, this.selectedLiters);
           }
         },
         undefined,
-        err => console.warn(`Error loading model ${cfg.modelPath}:`, err)
+        err => console.warn(`Error loading ${cfg.modelPath}:`, err)
       );
     });
+  }
+
+  /**
+   * Builds the 1m³ Glass Cube Tower
+   * Scaled harmoniously with car models (cubeSize = 0.44m corresponding to 1m real world)
+   */
+  buildCubeTower(liters, isPrivate = false) {
+    const group = isPrivate ? this.privateTowerGroup : this.cubeTowerGroup;
+    while (group.children.length > 0) {
+      group.remove(group.children[0]);
+    }
+
+    const fullCubes = Math.floor(liters / 1000);
+    const remainderLiters = liters % 1000;
+    const partialRatio = remainderLiters / 1000;
+    const totalCubes = remainderLiters > 0 ? fullCubes + 1 : fullCubes;
+
+    // 0.44m scale matches Lamborghini (1.16m height => 0.51m in scene)
+    const cubeSize = 0.44;
+    const gap = 0.02;
+    const stepY = cubeSize + gap;
+    const posX = isPrivate ? 1.65 : 0.85; // Positioned right next to Lamborghini!
+    const posZ = 0.05;
+
+    for (let i = 0; i < totalCubes; i++) {
+      const isTopPartial = (i === fullCubes && partialRatio > 0);
+      const fillPct = isTopPartial ? partialRatio : 1.0;
+      const cubeY = (i * stepY) + (cubeSize / 2);
+
+      const cubeHolder = new THREE.Group();
+      cubeHolder.position.set(posX, cubeY, posZ);
+
+      // 1. Crystal Glass Outer Cube Shell
+      const boxGeo = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+      const glassMesh = new THREE.Mesh(boxGeo, this.cubeGlassMaterial);
+      glassMesh.castShadow = true;
+      glassMesh.receiveShadow = true;
+      cubeHolder.add(glassMesh);
+
+      // Delicate golden edge wireframe
+      const wireGeo = new THREE.EdgesGeometry(boxGeo);
+      const wireMat = new THREE.LineBasicMaterial({
+        color: isPrivate ? 0x60a5fa : 0xfde68a,
+        transparent: true,
+        opacity: 0.8
+      });
+      const wireLine = new THREE.LineSegments(wireGeo, wireMat);
+      cubeHolder.add(wireLine);
+
+      // 2. Inner Golden Fat Core
+      const fatHeight = Math.max(0.02, (cubeSize * 0.94) * fillPct);
+      const fatGeo = new THREE.BoxGeometry(cubeSize * 0.92, fatHeight, cubeSize * 0.92);
+      const fatMat = new THREE.MeshStandardMaterial({
+        color: isPrivate ? 0x38bdf8 : 0xf59e0b,
+        emissive: isPrivate ? 0x0284c7 : 0xb45309,
+        emissiveIntensity: 0.46,
+        roughness: 0.22,
+        metalness: 0.08
+      });
+      const fatMesh = new THREE.Mesh(fatGeo, fatMat);
+      fatMesh.position.y = - (cubeSize * 0.94 / 2) + (fatHeight / 2);
+      cubeHolder.add(fatMesh);
+
+      group.add(cubeHolder);
+    }
+
+    const topHeight = (totalCubes * stepY);
+    this.createTowerTopMarker(group, posX, topHeight, liters, isPrivate);
+  }
+
+  createTowerTopMarker(group, posX, topHeight, liters, isPrivate) {
+    const markerGroup = new THREE.Group();
+    markerGroup.position.set(posX, topHeight + 0.12, 0.05);
+
+    const pinGeo = new THREE.OctahedronGeometry(0.08, 0);
+    const pinMat = new THREE.MeshStandardMaterial({
+      color: isPrivate ? 0x38bdf8 : 0xf59e0b,
+      emissive: isPrivate ? 0x0284c7 : 0xd97706,
+      emissiveIntensity: 0.9,
+      metalness: 0.2,
+      roughness: 0.1
+    });
+    const pinMesh = new THREE.Mesh(pinGeo, pinMat);
+    markerGroup.add(pinMesh);
+
+    group.add(markerGroup);
+  }
+
+  enterGiantView(objectId) {
+    const cfg = this.objectConfigs.find(c => c.id === objectId);
+    if (!cfg || !cfg.heroCamPos) return;
+
+    this.cameraMode = 'giant';
+    this.activeObjectId = objectId;
+    this.applyGlassFill(objectId, this.selectedLiters);
+
+    this.startCameraTransition(
+      new THREE.Vector3(cfg.heroCamPos[0], cfg.heroCamPos[1], cfg.heroCamPos[2]),
+      new THREE.Vector3(cfg.heroLookAt[0], cfg.heroLookAt[1], cfg.heroLookAt[2])
+    );
+
+    this.onCameraModeChange('giant', cfg);
+    this.onObjectChange(objectId);
+  }
+
+  exitGiantView() {
+    this.cameraMode = 'overview';
+    this.startCameraTransition(
+      new THREE.Vector3(0, 0.58, 8.4),
+      new THREE.Vector3(0, 0.58, 0)
+    );
+    this.onCameraModeChange('overview', null);
+  }
+
+  startCameraTransition(targetPos, targetLookAt) {
+    this.isTransitioningCamera = true;
+    this.camTransitionProgress = 0.0;
+    this.camStartPos.copy(this.camera.position);
+    this.camTargetPos.copy(targetPos);
+    this.lookAtStart.copy(this.controls.target);
+    this.lookAtTarget.copy(targetLookAt);
+  }
+
+  toggleSunsetMode() {
+    this.isSunsetMode = !this.isSunsetMode;
+
+    if (this.isSunsetMode) {
+      this.scene.background = new THREE.Color(0xfef3c7);
+      this.scene.fog.color.set(0xfef3c7);
+      this.baseFloor.material.color.set(0xfef3c7);
+      this.hemiLight.color.set(0xfde68a);
+      this.hemiLight.groundColor.set(0xfb923c);
+      this.mainLight.color.set(0xf59e0b);
+      this.mainLight.intensity = 2.8;
+      this.sunsetRimLight.intensity = 2.2;
+      this.fatGlow.intensity = 2.5;
+    } else {
+      this.scene.background = this.studioBgColor.clone();
+      this.scene.fog.color.copy(this.studioBgColor);
+      this.baseFloor.material.color.copy(this.studioBgColor);
+      this.hemiLight.color.set(0xffffff);
+      this.hemiLight.groundColor.set(0xf1f5f9);
+      this.mainLight.color.set(0xffffff);
+      this.mainLight.intensity = 2.5;
+      this.sunsetRimLight.intensity = 0.0;
+      this.fatGlow.intensity = 1.8;
+    }
+
+    return this.isSunsetMode;
   }
 
   setActiveObject(objectId) {
     if (!this.objectConfigs.find(c => c.id === objectId)) return;
     
-    // Revert previous active object to solid original
     if (this.activeObjectId && this.activeObjectId !== objectId) {
       this.revertToSolid(this.activeObjectId);
     }
@@ -251,27 +440,24 @@ export class LipoRankScene {
   applyGlassFill(objectId, liters) {
     const root = this.models[objectId];
     const fatMesh = this.fatMeshes[objectId];
-    const holder = this.modelHolders[objectId];
     const cfg = this.objectConfigs.find(c => c.id === objectId);
 
-    if (!root || !fatMesh || !holder || !cfg) return;
+    if (!root || !fatMesh || !cfg) return;
 
-    // Convert outer shell meshes to transparent crystal glass
     root.traverse(c => {
       if (c.isMesh) {
         c.material = this.glassMaterial;
       }
     });
 
-    // Make inner fat visible
     fatMesh.visible = true;
 
-    // Calculate fill percentage relative to this object's capacity
     const ratio = liters / cfg.volumeLiters;
-    const clampedPct = Math.min(Math.max(ratio, 0.05), 1.0);
-    this.targetFillPcts[objectId] = clampedPct;
+    this.targetFillPct = Math.min(Math.max(ratio, 0.05), 1.0);
+    this.startFillPct = 0.05;
+    this.fillStartTime = this.clock.getElapsedTime();
+    this.isFilling = true;
 
-    // Move warm fat glow to active object
     if (this.fatGlow) {
       this.fatGlow.position.set(cfg.position[0], 0.7, cfg.position[2] - 0.8);
     }
@@ -283,14 +469,12 @@ export class LipoRankScene {
 
     if (!root) return;
 
-    // Restore original materials
     root.traverse(c => {
       if (c.isMesh && this.originalMaterials.has(c)) {
         c.material = this.originalMaterials.get(c);
       }
     });
 
-    // Hide inner fat
     if (fatMesh) {
       fatMesh.visible = false;
     }
@@ -298,8 +482,8 @@ export class LipoRankScene {
 
   setVolume(liters) {
     this.selectedLiters = liters;
-    
-    // Update active glass fill
+    this.buildCubeTower(liters);
+
     if (this.activeObjectId) {
       this.applyGlassFill(this.activeObjectId, liters);
     }
@@ -307,33 +491,41 @@ export class LipoRankScene {
     this.onVolumeChange(liters);
   }
 
-  nextObject() {
-    const currentIndex = this.objectConfigs.findIndex(c => c.id === this.activeObjectId);
-    const nextIndex = (currentIndex + 1) % this.objectConfigs.length;
-    this.setActiveObject(this.objectConfigs[nextIndex].id);
-  }
-
-  prevObject() {
-    const currentIndex = this.objectConfigs.findIndex(c => c.id === this.activeObjectId);
-    const prevIndex = (currentIndex - 1 + this.objectConfigs.length) % this.objectConfigs.length;
-    this.setActiveObject(this.objectConfigs[prevIndex].id);
-  }
-
   initControls() {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
-    this.controls.dampingFactor = 0.07;
-    this.controls.minDistance = 4.5;
-    this.controls.maxDistance = 14.0;
-    
-    // Strictly restrict polar angle to maintain clean eye-level studio look
+    this.controls.dampingFactor = 0.08;
+    this.controls.minDistance = 1.0;
+    this.controls.maxDistance = 18.0;
     this.controls.maxPolarAngle = Math.PI / 2 - 0.01;
-    this.controls.minPolarAngle = Math.PI / 2.12;
+    this.controls.minPolarAngle = Math.PI / 2.25;
     this.controls.target.set(0, 0.58, 0);
   }
 
   initEvents() {
     window.addEventListener('resize', () => this.onWindowResize());
+
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    this.container.addEventListener('pointerdown', e => {
+      const rect = this.container.getBoundingClientRect();
+      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, this.camera);
+      const intersects = raycaster.intersectObjects(this.lineupGroup.children, true);
+
+      if (intersects.length > 0) {
+        let topParent = intersects[0].object;
+        while (topParent.parent && topParent.parent !== this.lineupGroup) {
+          topParent = topParent.parent;
+        }
+        if (topParent && topParent.userData && topParent.userData.config) {
+          this.enterGiantView(topParent.userData.config.id);
+        }
+      }
+    });
   }
 
   onWindowResize() {
@@ -350,19 +542,34 @@ export class LipoRankScene {
     const delta = this.clock.getDelta();
     const time = this.clock.getElapsedTime();
 
-    // Smoothly animate fluid level of active object
-    if (this.activeObjectId && this.clipPlanes[this.activeObjectId]) {
+    if (this.isTransitioningCamera) {
+      this.camTransitionProgress += delta * 2.2;
+      const t = Math.min(this.camTransitionProgress, 1.0);
+      const ease = t * t * (3 - 2 * t);
+
+      this.camera.position.lerpVectors(this.camStartPos, this.camTargetPos, ease);
+      this.controls.target.lerpVectors(this.lookAtStart, this.lookAtTarget, ease);
+
+      if (t >= 1.0) {
+        this.isTransitioningCamera = false;
+      }
+    }
+
+    if (this.isFilling && this.activeObjectId && this.clipPlanes[this.activeObjectId]) {
+      const elapsed = time - this.fillStartTime;
+      const progress = Math.min(elapsed / this.fillDuration, 1.0);
+      
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      this.currentFillPct = THREE.MathUtils.lerp(this.startFillPct, this.targetFillPct, easeOut);
+
       const b = this.worldBounds[this.activeObjectId];
       if (b && b.height) {
-        const target = this.targetFillPcts[this.activeObjectId] || 0.8;
-        const current = this.currentFillPcts[this.activeObjectId] || 0;
-        const next = THREE.MathUtils.lerp(current, target, delta * 4.0);
-        this.currentFillPcts[this.activeObjectId] = next;
+        const sloshWave = Math.sin(time * 3.5) * (b.height * 0.008);
+        this.clipPlanes[this.activeObjectId].constant = b.minY + (b.height * this.currentFillPct) + sloshWave;
+      }
 
-        // Subtle gentle liquid breathing wave
-        const sloshWave = Math.sin(time * 3.2) * (b.height * 0.008);
-        const planeConstant = b.minY + (b.height * next) + sloshWave;
-        this.clipPlanes[this.activeObjectId].constant = planeConstant;
+      if (progress >= 1.0) {
+        this.isFilling = false;
       }
     }
 
