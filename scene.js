@@ -77,6 +77,11 @@ export class LipoRankScene {
     this.slideTargetPos = new THREE.Vector3(1.4, 0, 0.0);
     this.slideProgress = 1.0;
 
+    // Neighbor Shift Animation on registration
+    this.isShiftingNeighbors = false;
+    this.shiftProgress = 1.0;
+    this.shiftedObjects = []; // array of { obj, startX, targetX, y, z }
+
     this.init();
     this.initLights();
     this.initStudioFloor();
@@ -594,42 +599,94 @@ export class LipoRankScene {
     const liters = doctorData.totalLiters || this.selectedLiters;
     const isVerified = (doctorData.status === 'verified');
     
-    // Calculate appropriate X position based on height/liters rank in the lineup:
-    let targetX = 0.5; // Default between cow/human and cybertruck
+    // 1. Calculate appropriate target X slot based on physical height / liters rank:
+    // fiji (0.5L): x=-22
+    // barrel (200L): x=-19
+    // lambo (4700L): x=-14
+    // SAMPLE tower (4820L): x=-8.5
+    // cow (300L): x=-5
+    // human (70L vol / 1.75m height): x=-1.5
+    // cybertruck (7100L): x=4.5
+    // thinker (500L vol / 1.80m height): x=12
+    // rex (8000L): x=20
+    // statue (15000L): x=29
+    // pool (2500000L): x=38
+    let targetX = 1.0;
     if (liters < 100) {
-      targetX = -20.5;
+      targetX = -20.5; // between fiji and barrel
     } else if (liters < 250) {
-      targetX = -16.5;
-    } else if (liters < 400) {
-      targetX = -3.2;
-    } else if (liters < 2000) {
-      targetX = 1.0;
+      targetX = -16.5; // between barrel and lambo
+    } else if (liters < 1500) {
+      targetX = -3.25; // between cow and human
     } else if (liters < 4820) {
-      targetX = -10.5; // near lamborghini / official tower
-    } else if (liters < 7100) {
-      targetX = 1.8; // between human and cybertruck
-    } else if (liters < 8000) {
-      targetX = 8.5; // between cybertruck and thinker
-    } else if (liters < 15000) {
+      targetX = -11.0; // between lambo and official sample tower
+    } else if (liters < 6000) {
+      targetX = -6.5; // between sample tower and cow
+    } else if (liters < 7500) {
+      targetX = 1.5; // between human and cybertruck
+    } else if (liters < 12000) {
+      targetX = 8.2; // between cybertruck and thinker
+    } else if (liters < 20000) {
       targetX = 24.5; // between rex and statue
     } else {
       targetX = 33.5; // between statue and pool
     }
     const targetZ = 0.0;
 
-    // Build the registered tower:
-    // If not verified yet, tower has isPrivate=true (blue tint & lock banner)
+    // 2. Smoothly shift neighbor objects to make room for the new tower!
+    // Shift left neighbors slightly left (-1.5m), right neighbors slightly right (+1.5m)
+    this.shiftedObjects = [];
+    const pushDist = 1.6;
+
+    // Shift 3D comparison models
+    this.objectConfigs.forEach(cfg => {
+      const holder = this.modelHolders[cfg.id];
+      if (holder) {
+        const origX = cfg.position[0];
+        let newX = origX;
+        if (origX > targetX) {
+          newX = origX + pushDist;
+        } else if (origX < targetX) {
+          newX = origX - pushDist;
+        }
+        this.shiftedObjects.push({
+          obj: holder,
+          startX: holder.position.x,
+          targetX: newX,
+          y: holder.position.y,
+          z: holder.position.z
+        });
+      }
+    });
+
+    // Also shift official SAMPLE tower if present
+    if (this.officialTowerGroup) {
+      const origSampleX = -8.5;
+      const newSampleX = origSampleX > targetX ? (origSampleX + pushDist) : (origSampleX - pushDist);
+      this.shiftedObjects.push({
+        obj: this.officialTowerGroup,
+        startX: this.officialTowerGroup.position.x,
+        targetX: newSampleX,
+        y: this.officialTowerGroup.position.y,
+        z: this.officialTowerGroup.position.z
+      });
+    }
+
+    this.isShiftingNeighbors = true;
+    this.shiftProgress = 0.0;
+
+    // 3. Build the registered tower:
     this.buildTowerMesh(this.registeredMyTowerGroup, liters, 0, 1.6, !isVerified, `${doctorData.name || '내'} 탑`);
     this.previewTowerGroup.visible = false;
     this.auraGroup.visible = false;
 
-    // Trigger smooth slide transition
+    // 4. Trigger smooth slide transition
     this.isSlidingMyTower = true;
     this.slideProgress = 0.0;
     this.slideStartPos.set(0, 0, 1.6);
     this.slideTargetPos.set(targetX, 0, targetZ);
 
-    // Pan camera to follow the registered tower smoothly
+    // 5. Pan camera to follow the registered tower smoothly
     const cubes = Math.max(1, Math.ceil(liters / 1000));
     const targetLookY = Math.min(6.0, cubes * 0.55);
     const camY = Math.max(2.2, targetLookY + 0.8);
@@ -985,6 +1042,22 @@ export class LipoRankScene {
       this.registeredMyTowerGroup.position.lerpVectors(this.slideStartPos, this.slideTargetPos, ease);
       if (t >= 1.0) {
         this.isSlidingMyTower = false;
+      }
+    }
+
+    // 3.1 Neighbor Objects Pushing / Shifting Animation
+    if (this.isShiftingNeighbors && this.shiftedObjects.length > 0) {
+      this.shiftProgress += delta * 1.5;
+      const t = Math.min(this.shiftProgress, 1.0);
+      const ease = t * t * (3 - 2 * t);
+
+      this.shiftedObjects.forEach(item => {
+        const curX = item.startX + (item.targetX - item.startX) * ease;
+        item.obj.position.set(curX, item.y, item.z);
+      });
+
+      if (t >= 1.0) {
+        this.isShiftingNeighbors = false;
       }
     }
 

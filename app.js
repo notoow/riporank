@@ -316,6 +316,9 @@ class LipoRankApp {
         const registered = submitDoctorApplication(currentData);
         this.myPendingTower = registered;
 
+        // Slide tower into the lineup & push neighbors apart dynamically!
+        this.scene.confirmAndRegisterMyTower(registered);
+
         // Re-render leaderboards & show registered banner
         this.renderLeaderboards();
         this.renderMyRegisteredBanner();
