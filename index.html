@@ -25,28 +25,28 @@
 </head>
 <body>
 
-  <!-- 1. Header (Exact Match to User Reference Mockup 3) -->
+  <!-- 1. Header (Clean Blue & White Theme) -->
   <header class="site-header">
     <div class="header-container">
       
       <!-- Left: Logo & Navigation Links -->
       <div class="header-left">
-        <a href="#" class="header-logo">
+        <a href="#home" class="header-logo" data-nav="home">
           <span class="logo-lr">LR</span>
-          <span>LipoRank</span>
+          <span class="logo-text">LipoRank</span>
         </a>
 
         <nav class="header-nav">
-          <a href="#" class="nav-link active">홈</a>
-          <a href="#leaderboard-section" class="nav-link">의사 랭킹</a>
-          <a href="#" class="nav-link">병원 찾기</a>
-          <a href="#" class="nav-link">지방흡입 정보</a>
-          <a href="#" class="nav-link">커뮤니티</a>
-          <a href="#" class="nav-link">이벤트</a>
+          <a href="#home" class="nav-link active" data-nav="home">홈</a>
+          <a href="#ranking" class="nav-link" data-nav="ranking">의사 랭킹</a>
+          <a href="#hospitals" class="nav-link" data-nav="hospitals">병원 찾기</a>
+          <a href="#info" class="nav-link" data-nav="info">지방흡입 정보</a>
+          <a href="#community" class="nav-link" data-nav="community">커뮤니티</a>
+          <a href="#events" class="nav-link" data-nav="events">이벤트</a>
         </nav>
       </div>
 
-      <!-- Right: Search Pill, Bell, Auth Button, Register CTA -->
+      <!-- Right: Search Pill, Bell, Auth Button -->
       <div class="header-right">
         <div class="search-pill">
           <input type="text" placeholder="의사, 병원, 지역 검색">
@@ -63,12 +63,6 @@
         <button class="btn-auth">
           로그인 / 회원가입
         </button>
-
-        <!-- Highlighted CTA: 내 랭크 등록하기 -->
-        <button id="btn-register-rank" class="btn-main-register">
-          <i data-lucide="plus-circle" class="icon-sm"></i>
-          <span>내 랭크 등록하기</span>
-        </button>
       </div>
 
     </div>
@@ -77,194 +71,374 @@
   <!-- 2. Main Page Layout -->
   <main class="page-wrap">
     
-    <!-- 3D Stage Card -->
-    <div class="stage-card">
+    <!-- ==================== TAB 1: HOME VIEW ==================== -->
+    <section id="view-home" class="tab-view active">
       
-      <!-- 3D Canvas Viewport with Overlays -->
-      <div class="viewport-wrapper">
+      <!-- 3D Stage Card -->
+      <div class="stage-card">
         
-        <!-- Viewport Top Floating Action Controls -->
-        <div class="viewport-controls-bar">
-          <!-- Sunset Golden Hour Toggle Button -->
-          <button id="btn-toggle-sunset" class="action-pill-btn" title="황금빛 노을 모드 토글">
-            <i data-lucide="sunset" class="icon-sm"></i>
-            <span id="sunset-btn-text">노을 모드</span>
-          </button>
-
-          <!-- 3D Direct Enter / Giant View Toggle -->
-          <button id="btn-toggle-giant" class="action-pill-btn primary" title="3D 세상 직접 체험하기">
-            <i data-lucide="maximize-2" class="icon-sm"></i>
-            <span id="giant-btn-text">3D 세상 직접 들어가기</span>
-          </button>
-        </div>
-
-        <!-- Carousel Nav Buttons -->
-        <button id="carousel-prev" class="carousel-arrow prev" title="이전 사물">
-          <i data-lucide="chevron-left"></i>
-        </button>
-        <button id="carousel-next" class="carousel-arrow next" title="다음 사물">
-          <i data-lucide="chevron-right"></i>
-        </button>
-
-        <!-- 5 Comparison Labels Overlay + 1m³ Cube Tower Spotlight -->
-        <div id="labels-overlay" class="stage-labels-overlay">
-          <div class="object-label-tab" data-object-id="fiji_bottle">
-            <div class="label-title">생수병</div>
-            <div class="label-vol">500ml</div>
-          </div>
-
-          <div class="object-label-tab" data-object-id="swimming_pool">
-            <div class="label-title">올림픽 수영장</div>
-            <div class="label-vol">2,500,000L</div>
-          </div>
+        <!-- 3D Canvas Viewport with Overlays -->
+        <div class="viewport-wrapper">
           
-          <!-- Center Active Highlight Box (Lambo + 1m³ Tower) -->
-          <div id="center-highlight-tab" class="center-highlight-box" data-object-id="lamborghini">
-            <div class="tag">공인 1위 김지훈 대표원장</div>
-            <div id="center-highlight-amount" class="amount">4,820L</div>
-            <div id="center-highlight-ratio" class="ratio-badge">1m³ 큐브 4.82개 완판</div>
-          </div>
+          <!-- Viewport Top Floating Controls (Sunset & Walk-in Mode) -->
+          <div class="viewport-controls-bar">
+            <!-- Sunset Mode Toggle -->
+            <button id="btn-toggle-sunset" class="action-pill-btn" title="황금빛 노을 모드 토글">
+              <i data-lucide="sunset" class="icon-sm"></i>
+              <span id="sunset-btn-text">노을 모드</span>
+            </button>
 
-          <div class="object-label-tab" data-object-id="cybertruck">
-            <div class="label-title">사이버트럭</div>
-            <div class="label-vol">7,100L</div>
-          </div>
-
-          <div class="object-label-tab" data-object-id="statue_of_liberty">
-            <div class="label-title">자유의 여신상</div>
-            <div class="label-vol">15,000L</div>
-          </div>
-        </div>
-
-        <!-- Giant Hero View Floating Overlay Card (Appears in Giant Mode) -->
-        <div id="giant-view-card" class="giant-view-card">
-          <div class="giant-header">
-            <div class="giant-badge">
-              <i data-lucide="eye" class="icon-sm"></i>
-              <span id="giant-obj-name">람보르기니 우라칸 거인 뷰</span>
-            </div>
-            <button id="btn-exit-giant" class="btn-exit-giant" title="전체 라인업으로 복귀">
-              <i data-lucide="x" class="icon-sm"></i>
-              <span>전체보기 복귀</span>
+            <!-- 3D Walk-in Direct Enter Button -->
+            <button id="btn-toggle-giant" class="action-pill-btn primary" title="3D 세상 직접 들어가기 (WASD 걷기 & QE 높이조절)">
+              <i data-lucide="footprints" class="icon-sm"></i>
+              <span id="giant-btn-text">3D 세상 직접 들어가기</span>
             </button>
           </div>
-          <div id="giant-detail-text" class="giant-body-text">
-            람보르기니 우라칸 1대 완판(100%) 후에도 +120L를 더 채운 대기록입니다!
+
+          <!-- Walk-in HUD Guidance Banner (Shows in Walk-in mode) -->
+          <div id="walkin-hud" class="walkin-hud-bar">
+            <div class="hud-keys">
+              <span class="key-badge">W</span><span class="key-badge">A</span><span class="key-badge">S</span><span class="key-badge">D</span> 걷기
+              <span class="sep">|</span>
+              <span class="key-badge">Q</span><span class="key-badge">E</span> 높이 조절
+              <span class="sep">|</span>
+              <i data-lucide="mouse-pointer" class="icon-sm"></i> 드래그: 시선 회전
+              <span class="sep">|</span>
+              사물 클릭: 거인 뷰
+            </div>
+            <button id="btn-exit-walkin" class="btn-exit-hud">
+              <i data-lucide="corner-up-left" class="icon-sm"></i>
+              <span>전체보기로 복귀 (ESC)</span>
+            </button>
           </div>
-        </div>
 
-        <!-- Three.js Canvas Container -->
-        <div id="canvas-container"></div>
-
-        <!-- Carousel Bottom Dots Indicator -->
-        <div class="carousel-dots">
-          <span class="dot" data-index="0" title="생수병"></span>
-          <span class="dot" data-index="1" title="올림픽 수영장"></span>
-          <span class="dot active" data-index="2" title="람보르기니 & 큐브탑"></span>
-          <span class="dot" data-index="3" title="사이버트럭"></span>
-          <span class="dot" data-index="4" title="자유의 여신상"></span>
-        </div>
-      </div>
-
-      <!-- Doctor Flex Viral Hook Banner -->
-      <div class="doctor-flex-banner">
-        <div class="flex-icon-wrap">
-          <i data-lucide="award" class="icon-md"></i>
-        </div>
-        <div class="flex-content">
-          <div class="flex-headline">
-            <span class="doc-badge-pill">공인 1위</span>
-            <strong id="flex-doc-name">김지훈 대표원장</strong>의 누적 흡입량 
-            <span id="flex-liters-val" class="highlight-num">4,820L</span>는
-          </div>
-          <div id="flex-comparison-text" class="flex-subline">
-            <strong>1m³(1,000L) 글래스 큐브 4.82개</strong> 및 <strong>람보르기니 우라칸 1대(102.6%)</strong>를 순수 지방으로 완판한 대기록입니다!
-          </div>
-        </div>
-        <div class="flex-stats-pill">
-          <div>환산 무게: <strong id="fat-weight-text">약 4,338 kg</strong></div>
-          <div>열량: <strong id="fat-cal-text">약 39,042,000 kcal</strong></div>
-        </div>
-      </div>
-
-      <!-- Bottom Slider & Quick Preset Chips -->
-      <div class="stage-bottom-strip">
-        <div class="slider-row">
-          <div>
-            <span class="control-label">비교 수술량 조절 (1m³ 큐브 실시간 적층 연동)</span>
-            <div id="current-vol-text" class="vol-big-text">4,820 L</div>
-          </div>
-          <div class="unit-toggle">
-            <span class="unit-badge active">1m³ 큐브 환산: <strong id="cube-count-badge">4.82 개</strong></span>
-          </div>
-        </div>
-
-        <input type="range" id="vol-slider" class="slider-input" min="50" max="15000" step="50" value="4820">
-
-        <!-- Quick Select Chips -->
-        <div class="quick-chips-row">
-          <button class="chip" data-liters="500">500L (생수병 1,000병)</button>
-          <button class="chip" data-liters="2000">2,000L (1m³ 큐브 2개)</button>
-          <button class="chip" data-liters="4700">4,700L (람보르기니 1대분)</button>
-          <button class="chip active" data-liters="4820">4,820L (1위 김지훈 원장)</button>
-          <button class="chip" data-liters="7100">7,100L (사이버트럭 1대분)</button>
-          <button class="chip" data-liters="15000">15,000L (자유의 여신상)</button>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- 3. Doctor Leaderboard Section (Official Records + My Pending Private Tower) -->
-    <section id="leaderboard-section" class="leaderboard-wrap">
-      <div class="table-header-row">
-        <div>
-          <h3 class="sec-title">2026 공인 지방흡입 집도의 실적 순위표</h3>
-          <p class="sec-desc">병원 EMR 전자차트 및 순수 지방량(Pure Fat Volume) 기준 공식 공증 랭킹</p>
-        </div>
-        <button onclick="document.getElementById('btn-register-rank').click()" class="btn-main-register" style="font-size: 12px; padding: 7px 14px;">
-          <i data-lucide="plus" class="icon-sm"></i>
-          <span>내 랭크 등록</span>
-        </button>
-      </div>
-
-      <!-- User's Private Pending Application Banner (Visible only to this user) -->
-      <div id="my-pending-banner" class="my-pending-card" style="display: none;">
-        <div class="pending-left">
-          <div class="pending-badge">
-            <i data-lucide="lock" class="icon-sm"></i>
-            <span>공인 심사 진행중 (나만 보기 모드)</span>
-          </div>
-          <div class="pending-title">
-            <strong id="my-pending-name">신청자 원장님</strong> (<span id="my-pending-clinic">병원명</span>)
-          </div>
-          <div class="pending-desc">
-            제출하신 EMR 수술 대장 공증 심사가 진행 중입니다. 3D 월드에 원장님의 1m³ 큐브 탑이 임시 시각화되었습니다.
-          </div>
-        </div>
-        <div class="pending-right">
-          <strong id="my-pending-liters" class="pending-liters">4,820 L</strong>
-          <button id="btn-view-my-tower" class="btn-view-tower">
-            <span>내 탑 3D 보기</span>
-            <i data-lucide="arrow-right" class="icon-sm"></i>
+          <!-- Carousel Nav Buttons -->
+          <button id="carousel-prev" class="carousel-arrow prev" title="이전 사물">
+            <i data-lucide="chevron-left"></i>
           </button>
+          <button id="carousel-next" class="carousel-arrow next" title="다음 사물">
+            <i data-lucide="chevron-right"></i>
+          </button>
+
+          <!-- 6 Comparison Labels Overlay (Strictly Scaled Left to Right) -->
+          <!-- [생수병 0.5L] -> [람보르기니 4,700L] -> [SAMPLE 탑 4,820L] -> [사이버트럭 7,100L] -> [자유의여신상 15,000L] -> [수영장 2,500,000L] -->
+          <div id="labels-overlay" class="stage-labels-overlay">
+            <div class="object-label-tab" data-object-id="fiji_bottle">
+              <div class="label-title">생수병</div>
+              <div class="label-vol">500ml</div>
+            </div>
+
+            <div class="object-label-tab" data-object-id="lamborghini">
+              <div class="label-title">람보르기니 우라칸</div>
+              <div class="label-vol">4,700L</div>
+            </div>
+            
+            <!-- Center Permanent Official SAMPLE Tower -->
+            <div id="center-highlight-tab" class="center-highlight-box" title="공인 1위 SAMPLE 원장 1m³ 큐브 탑">
+              <div class="tag">공인 1위 SAMPLE 원장</div>
+              <div id="center-highlight-amount" class="amount">4,820L</div>
+              <div id="center-highlight-ratio" class="ratio-badge">1m³ 큐브 4.82개 완판</div>
+            </div>
+
+            <div class="object-label-tab" data-object-id="cybertruck">
+              <div class="label-title">사이버트럭</div>
+              <div class="label-vol">7,100L</div>
+            </div>
+
+            <div class="object-label-tab" data-object-id="statue_of_liberty">
+              <div class="label-title">자유의 여신상</div>
+              <div class="label-vol">15,000L</div>
+            </div>
+
+            <div class="object-label-tab" data-object-id="swimming_pool">
+              <div class="label-title">올림픽 수영장</div>
+              <div class="label-vol">2,500,000L</div>
+            </div>
+          </div>
+
+          <!-- Giant Hero View Floating Overlay Card -->
+          <div id="giant-view-card" class="giant-view-card">
+            <div class="giant-header">
+              <div class="giant-badge">
+                <i data-lucide="eye" class="icon-sm"></i>
+                <span id="giant-obj-name">람보르기니 우라칸 거인 뷰</span>
+              </div>
+              <button id="btn-exit-giant" class="btn-exit-giant" title="전체 라인업으로 복귀">
+                <i data-lucide="x" class="icon-sm"></i>
+                <span>전체보기 복귀</span>
+              </button>
+            </div>
+            <div id="giant-detail-text" class="giant-body-text">
+              람보르기니 우라칸 1대 완판(100%) 후에도 +120L를 더 채운 대기록입니다!
+            </div>
+          </div>
+
+          <!-- Three.js Canvas Container -->
+          <div id="canvas-container"></div>
+
+          <!-- Carousel Bottom Dots Indicator -->
+          <div class="carousel-dots">
+            <span class="dot" data-index="0" title="생수병"></span>
+            <span class="dot" data-index="1" title="람보르기니"></span>
+            <span class="dot active" data-index="2" title="SAMPLE 큐브 탑"></span>
+            <span class="dot" data-index="3" title="사이버트럭"></span>
+            <span class="dot" data-index="4" title="자유의 여신상"></span>
+            <span class="dot" data-index="5" title="올림픽 수영장"></span>
+          </div>
         </div>
+
+        <!-- Doctor Flex Viral Hook Banner -->
+        <div class="doctor-flex-banner">
+          <div class="flex-icon-wrap">
+            <i data-lucide="award" class="icon-md"></i>
+          </div>
+          <div class="flex-content">
+            <div class="flex-headline">
+              <span class="doc-badge-pill">공인 1위</span>
+              <strong id="flex-doc-name">SAMPLE 원장</strong>의 누적 흡입량 
+              <span id="flex-liters-val" class="highlight-num">4,820L</span>는
+            </div>
+            <div id="flex-comparison-text" class="flex-subline">
+              <strong>1m³(1,000L) 글래스 큐브 4.82개</strong> 및 <strong>람보르기니 우라칸 1대(102.6%)</strong>를 순수 지방으로 완판한 대기록입니다!
+            </div>
+          </div>
+          <div class="flex-stats-pill">
+            <div>환산 무게: <strong id="fat-weight-text">약 4,338 kg</strong></div>
+            <div>열량: <strong id="fat-cal-text">약 39,042,000 kcal</strong></div>
+          </div>
+        </div>
+
+        <!-- Bottom Controls Strip: "내 수술량 조절" & "[+ 내 탑 등록하기]" CTA -->
+        <div class="stage-bottom-strip">
+          <div class="bottom-control-header">
+            <div>
+              <span class="control-label">내 수술량 조절 (1m³ 큐브 실시간 적층 연동)</span>
+              <div id="current-vol-text" class="vol-big-text">4,820 L</div>
+            </div>
+
+            <div class="bottom-cta-group">
+              <div class="unit-toggle">
+                <span class="unit-badge">1m³ 큐브 환산: <strong id="cube-count-badge">4.82 개 완판</strong></span>
+              </div>
+              
+              <!-- Core CTA: 내 탑 등록하기 (Positioned prominent under 3D canvas) -->
+              <button id="btn-register-rank-bottom" class="btn-register-canvas-bottom">
+                <i data-lucide="plus-circle" class="icon-sm"></i>
+                <span>내 탑 등록하기</span>
+              </button>
+            </div>
+          </div>
+
+          <input type="range" id="vol-slider" class="slider-input" min="50" max="15000" step="50" value="4820">
+
+          <!-- Quick Select Chips -->
+          <div class="quick-chips-row">
+            <button class="chip" data-liters="500">500L (생수병 1,000병)</button>
+            <button class="chip" data-liters="2000">2,000L (1m³ 큐브 2개)</button>
+            <button class="chip" data-liters="4700">4,700L (람보르기니 1대분)</button>
+            <button class="chip active" data-liters="4820">4,820L (1위 SAMPLE 원장)</button>
+            <button class="chip" data-liters="7100">7,100L (사이버트럭 1대분)</button>
+            <button class="chip" data-liters="15000">15,000L (자유의 여신상)</button>
+          </div>
+        </div>
+
       </div>
 
-      <table class="doc-table">
-        <thead>
-          <tr>
-            <th style="width: 70px;">순위</th>
-            <th>집도의 정보</th>
-            <th>총 누적 흡입량</th>
-            <th>1인 평균 / 순수지방률</th>
-            <th>공인 검증 상태</th>
-            <th style="width: 150px;">3D 체급 연동</th>
-          </tr>
-        </thead>
-        <tbody id="doctors-table-body">
-          <!-- Injected via app.js -->
-        </tbody>
-      </table>
+      <!-- Quick Leaderboard Teaser on Home View -->
+      <div class="home-leaderboard-preview">
+        <div class="table-header-row">
+          <div>
+            <h3 class="sec-title">공인 지방흡입 집도의 실적 순위표 (TOP 1)</h3>
+            <p class="sec-desc">병원 EMR 전자차트 및 순수 지방량(Pure Fat Volume) 기준 공식 공증 랭킹</p>
+          </div>
+          <a href="#ranking" class="link-more-ranking" data-nav="ranking">
+            <span>전체 순위표 보기</span>
+            <i data-lucide="arrow-right" class="icon-sm"></i>
+          </a>
+        </div>
+
+        <!-- User's Private Pending Application Banner -->
+        <div id="my-pending-banner-home" class="my-pending-card" style="display: none;">
+          <div class="pending-left">
+            <div class="pending-badge">
+              <i data-lucide="lock" class="icon-sm"></i>
+              <span>공인 심사 진행중 (나만 보기 모드)</span>
+            </div>
+            <div class="pending-title">
+              <strong id="my-pending-name-home">신청자 원장님</strong> (<span id="my-pending-clinic-home">병원명</span>)
+            </div>
+            <div class="pending-desc">
+              제출하신 EMR 수술 대장 공증 심사가 진행 중입니다. 3D 월드에 원장님의 1m³ 큐브 탑이 임시 시각화되었습니다.
+            </div>
+          </div>
+          <div class="pending-right">
+            <strong id="my-pending-liters-home" class="pending-liters">4,820 L</strong>
+          </div>
+        </div>
+
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th style="width: 70px;">순위</th>
+              <th>집도의 정보</th>
+              <th>총 누적 흡입량</th>
+              <th>1인 평균 / 순수지방률</th>
+              <th>공인 검증 상태</th>
+              <th style="width: 150px;">3D 체급 연동</th>
+            </tr>
+          </thead>
+          <tbody id="home-doctors-table-body">
+            <!-- Injected via app.js -->
+          </tbody>
+        </table>
+      </div>
+
+    </section>
+
+    <!-- ==================== TAB 2: DOCTOR RANKING VIEW ==================== -->
+    <section id="view-ranking" class="tab-view">
+      <div class="subpage-header">
+        <h2 class="subpage-title">2026 글로벌 지방흡입 전문의 공식 순위표</h2>
+        <p class="subpage-desc">보건복지부 면허 공인 및 병의원 EMR/CRM 전자차트 기반 검증 리더보드</p>
+      </div>
+
+      <div class="ranking-filter-bar">
+        <button class="filter-btn active">전체 부위 종합</button>
+        <button class="filter-btn">대용량 (3,000cc+)</button>
+        <button class="filter-btn">복부 / 러브핸들</button>
+        <button class="filter-btn">허벅지 / 힙라인</button>
+        <button class="filter-btn">팔 / 부유방</button>
+        <button class="filter-btn">서울 강남권</button>
+      </div>
+
+      <div class="leaderboard-wrap" style="margin-top: 16px;">
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th style="width: 70px;">순위</th>
+              <th>집도의 정보</th>
+              <th>총 누적 흡입량</th>
+              <th>1인 평균 / 순수지방률</th>
+              <th>공인 검증 상태</th>
+              <th style="width: 150px;">3D 탑 바로보기</th>
+            </tr>
+          </thead>
+          <tbody id="full-doctors-table-body">
+            <!-- Injected via app.js -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: FIND HOSPITALS VIEW ==================== -->
+    <section id="view-hospitals" class="tab-view">
+      <div class="subpage-header">
+        <h2 class="subpage-title">공인 EMR 연동 인증 병원 찾기</h2>
+        <p class="subpage-desc">순수 지방흡입량 공증 시스템을 도입한 전국 안전 클리닉 디렉토리</p>
+      </div>
+
+      <div class="hospital-grid">
+        <div class="hospital-card featured">
+          <div class="hosp-badge">공인 인증 1위 지점</div>
+          <h3 class="hosp-name">더슬림 메디컬의원 강남본점</h3>
+          <p class="hosp-sub">서울 강남구 테헤란로 152 (강남역 1번 출구)</p>
+          <div class="hosp-stats">
+            <div>대표 집도의: <strong>SAMPLE 원장</strong></div>
+            <div>누적 흡입량: <strong style="color:#0953ff;">4,820 L</strong></div>
+            <div>EMR 시스템: <strong>비트U차트 연동 완료</strong></div>
+          </div>
+          <button class="btn-hosp-consult" onclick="window.location.hash='#home'">3D 탑 둘러보기</button>
+        </div>
+
+        <div class="hospital-card">
+          <div class="hosp-badge secondary">공인 EMR 심사 완료</div>
+          <h3 class="hosp-name">더슬림 메디컬의원 서초점</h3>
+          <p class="hosp-sub">서울 서초구 서초대로 301</p>
+          <div class="hosp-stats">
+            <div>전문 부위: <strong>허벅지 360도 및 복부 대용량</strong></div>
+            <div>마취과 전문의: <strong>상주 모니터링 시스템</strong></div>
+          </div>
+          <button class="btn-hosp-consult">병원 상세 정보</button>
+        </div>
+
+        <div class="hospital-card">
+          <div class="hosp-badge secondary">공인 EMR 심사 완료</div>
+          <h3 class="hosp-name">더슬림 메디컬의원 송파잠실점</h3>
+          <p class="hosp-sub">서울 송파구 올림픽로 289</p>
+          <div class="hosp-stats">
+            <div>전문 부위: <strong>팔뚝 및 부유방 라인 특화</strong></div>
+            <div>사후 관리: <strong>고주파 엔더몰로지 전담 센터</strong></div>
+          </div>
+          <button class="btn-hosp-consult">병원 상세 정보</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: LIPOSUCTION INFO VIEW ==================== -->
+    <section id="view-info" class="tab-view">
+      <div class="subpage-header">
+        <h2 class="subpage-title">지방흡입 의학 정보 & 3D 볼륨 가이드</h2>
+        <p class="subpage-desc">순수 지방(Pure Fat)의 정의와 볼륨 체감 상식</p>
+      </div>
+
+      <div class="info-content-grid">
+        <div class="info-card">
+          <div class="info-icon"><i data-lucide="droplet"></i></div>
+          <h3>순수 지방량 vs 총 흡입량의 차이</h3>
+          <p>지방흡입 시 배출되는 액체는 '순수 지방(Pure Yellow Fat)'과 '투메슨트 마취 용액 및 혈액'으로 나뉩니다. LipoRank는 물을 뺀 순수 황금빛 지방 체적만을 공인 기준으로 집계합니다.</p>
+        </div>
+
+        <div class="info-card">
+          <div class="info-icon"><i data-lucide="box"></i></div>
+          <h3>1m³ (1,000L) 큐브 환산 기준</h3>
+          <p>지방 1L는 무게 약 0.9kg입니다. 1m³ 크리스탈 큐브는 성인 환자 약 350~400명의 순수 지방 총합(1,000L = 900kg)에 해당하며, 거대한 부피 체감의 국제 표준 척도입니다.</p>
+        </div>
+
+        <div class="info-card">
+          <div class="info-icon"><i data-lucide="shield-check"></i></div>
+          <h3>EMR 전자차트 공증 프로세스</h3>
+          <p>병원 내 전산 수술 대장(비트U차트, 이지스, 닥터스 등)과 보건복지부 외과/성형외과 전문의 면허 번호를 대조 실사하여 허위 기재 없는 100% 실명 검증 랭킹을 보장합니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 5: COMMUNITY VIEW ==================== -->
+    <section id="view-community" class="tab-view">
+      <div class="subpage-header">
+        <h2 class="subpage-title">전문의 수술 케이스 포럼 & Q&A</h2>
+        <p class="subpage-desc">집도의와 환자가 나누는 정밀 흡입 노하우와 회복 이야기</p>
+      </div>
+
+      <div class="community-list">
+        <div class="post-card">
+          <span class="post-tag">수술 케이스 분석</span>
+          <h4 class="post-title">복부 4,800cc 대용량 흡입 시 순수 지방률 90% 달성 노하우 (SAMPLE 원장 집도 분석)</h4>
+          <p class="post-desc">투메슨트 비율 1:1.1 균일 침윤법과 심부 지방층 정밀 타겟팅으로 출혈 최소화 및 빠른 회복을 도모한 케이스 고찰입니다.</p>
+          <div class="post-meta">작성자: LipoRank 학술분과 · 2026-11-08 · 조회수 1,420</div>
+        </div>
+
+        <div class="post-card">
+          <span class="post-tag">전문의 실시간 Q&A</span>
+          <h4 class="post-title">사이버트럭 1대분(7,100L)의 지방을 흡입하기까지 몇 건의 집도가 필요한가요?</h4>
+          <p class="post-desc">평균 1인 흡입량 2,400cc 기준 약 2,900례 이상의 임상 수술이 축적되어야 도달 가능한 마일스톤입니다.</p>
+          <div class="post-meta">답변: 공인 검증의사단 · 2026-11-05 · 답변 8개</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 6: EVENTS VIEW ==================== -->
+    <section id="view-events" class="tab-view">
+      <div class="subpage-header">
+        <h2 class="subpage-title">2026 LipoRank 공인 인증 이벤트</h2>
+        <p class="subpage-desc">신규 병의원 EMR 데이터 연동 실사 지원 프로모션</p>
+      </div>
+
+      <div class="event-card">
+        <div class="event-badge">상시 진행</div>
+        <h3>전국 전문의 3D 큐브 탑 무료 등재 및 공증 비용 전액 지원</h3>
+        <p>지금 내 병원의 EMR 차트와 의사면허를 등록하시면, 공인 감사 위원회의 실사 비용 전액을 지원하며 전세계 LipoRank 순위표에 원장님만의 3D 1m³ 크리스탈 탑을 영구 보존해 드립니다.</p>
+        <button class="btn-event-cta" onclick="document.getElementById('btn-register-rank-bottom').click()">지금 내 탑 등록 신청하기</button>
+      </div>
     </section>
 
   </main>
@@ -299,11 +473,11 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
           <div class="form-group">
             <label>누적 총 흡입량 (L) *</label>
-            <input type="number" id="reg-liters" placeholder="예: 3600" required>
+            <input type="number" id="reg-liters" placeholder="예: 4820" required>
           </div>
           <div class="form-group">
             <label>총 수술 건수 (건) *</label>
-            <input type="number" id="reg-cases" placeholder="예: 1420" required>
+            <input type="number" id="reg-cases" placeholder="예: 1967" required>
           </div>
         </div>
 

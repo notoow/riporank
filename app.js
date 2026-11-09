@@ -1,6 +1,6 @@
 /**
  * LipoRank Main Application Controller
- * Handles 3D Scene events, Giant Hero View transitions, Sunset Golden Hour mode,
+ * Handles SPA navigation tabs, 3D Scene events, Walk-in WASD controls,
  * 1m³ Cube Tower counts, and private pending application workflow
  */
 import { LipoRankScene } from './scene.js';
@@ -9,15 +9,16 @@ import { COMPARISON_OBJECTS } from './objects-data.js';
 
 class LipoRankApp {
   constructor() {
-    this.currentLiters = 4820; // Default: Top rank doctor 4,820L
+    this.currentLiters = 4820; // Default: SAMPLE 원장 4,820L
     this.activeDoctor = getDoctors()[0];
     this.doctors = getDoctors();
     this.myPendingTower = getMyPendingTower();
 
     this.initElements();
+    this.initNavigation();
     this.init3DScene();
     this.initUIEvents();
-    this.renderLeaderboard();
+    this.renderLeaderboards();
     this.renderMyPendingBanner();
     this.updateAllTexts(this.currentLiters, this.scene.activeObjectId);
     this.refreshIcons();
@@ -37,17 +38,23 @@ class LipoRankApp {
     this.centerHighlightAmount = document.getElementById('center-highlight-amount');
     this.centerHighlightRatio = document.getElementById('center-highlight-ratio');
     this.presetChips = document.querySelectorAll('.chip');
-    this.btnRegisterRank = document.getElementById('btn-register-rank');
+    
+    // Bottom Register Button (under 3D Canvas)
+    this.btnRegisterRankBottom = document.getElementById('btn-register-rank-bottom');
     this.registerModal = document.getElementById('register-modal');
     this.modalClose = document.getElementById('modal-close');
     this.registerForm = document.getElementById('register-form');
-    this.doctorsTableBody = document.getElementById('doctors-table-body');
+    this.homeDoctorsTableBody = document.getElementById('home-doctors-table-body');
+    this.fullDoctorsTableBody = document.getElementById('full-doctors-table-body');
 
-    // Controls: Sunset & Giant Hero View
+    // Controls: Sunset, Giant View, Walk-in HUD
     this.btnToggleSunset = document.getElementById('btn-toggle-sunset');
     this.sunsetBtnText = document.getElementById('sunset-btn-text');
     this.btnToggleGiant = document.getElementById('btn-toggle-giant');
     this.giantBtnText = document.getElementById('giant-btn-text');
+    this.walkinHud = document.getElementById('walkin-hud');
+    this.btnExitWalkin = document.getElementById('btn-exit-walkin');
+
     this.giantViewCard = document.getElementById('giant-view-card');
     this.giantObjName = document.getElementById('giant-obj-name');
     this.giantDetailText = document.getElementById('giant-detail-text');
@@ -68,17 +75,60 @@ class LipoRankApp {
     this.objectTabs = document.querySelectorAll('.object-label-tab, .center-highlight-box');
 
     // Pending Banner Elements
-    this.myPendingBanner = document.getElementById('my-pending-banner');
-    this.myPendingName = document.getElementById('my-pending-name');
-    this.myPendingClinic = document.getElementById('my-pending-clinic');
-    this.myPendingLiters = document.getElementById('my-pending-liters');
-    this.btnViewMyTower = document.getElementById('btn-view-my-tower');
+    this.myPendingBannerHome = document.getElementById('my-pending-banner-home');
+    this.myPendingNameHome = document.getElementById('my-pending-name-home');
+    this.myPendingClinicHome = document.getElementById('my-pending-clinic-home');
+    this.myPendingLitersHome = document.getElementById('my-pending-liters-home');
+  }
+
+  initNavigation() {
+    this.navLinks = document.querySelectorAll('.header-nav .nav-link, .header-logo, .link-more-ranking');
+    this.tabViews = document.querySelectorAll('.tab-view');
+
+    const switchTab = (targetId) => {
+      // Update nav link states
+      document.querySelectorAll('.header-nav .nav-link').forEach(link => {
+        link.classList.toggle('active', link.dataset.nav === targetId);
+      });
+
+      // Switch views
+      this.tabViews.forEach(view => {
+        view.classList.toggle('active', view.id === `view-${targetId}`);
+      });
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      this.refreshIcons();
+
+      // Trigger 3D canvas resize when switching back to home
+      if (targetId === 'home' && this.scene) {
+        setTimeout(() => this.scene.onWindowResize(), 50);
+      }
+    };
+
+    this.navLinks.forEach(link => {
+      link.addEventListener('click', e => {
+        const target = link.dataset.nav;
+        if (target) {
+          e.preventDefault();
+          switchTab(target);
+          history.pushState(null, '', `#${target}`);
+        }
+      });
+    });
+
+    // Handle hash on page load
+    window.addEventListener('hashchange', () => {
+      const hash = window.location.hash.replace('#', '') || 'home';
+      switchTab(hash);
+    });
+
+    const initialHash = window.location.hash.replace('#', '') || 'home';
+    switchTab(initialHash);
   }
 
   init3DScene() {
     this.scene = new LipoRankScene(this.canvasContainer, {
       initialLiters: this.currentLiters,
-      initialObjectId: 'lamborghini',
       onVolumeChange: liters => {
         this.updateAllTexts(liters, this.scene.activeObjectId);
       },
@@ -94,7 +144,6 @@ class LipoRankApp {
       }
     });
 
-    // If user already has a pending application, build their private tower
     if (this.myPendingTower) {
       this.scene.buildCubeTower(this.myPendingTower.totalLiters, true);
     }
@@ -189,14 +238,20 @@ class LipoRankApp {
       });
     }
 
-    // 7. Giant View (3D Walk-in) Toggle & Exit Buttons
+    // 7. 3D Walk-in Direct Enter / Exit Buttons (WASD mode)
     if (this.btnToggleGiant) {
       this.btnToggleGiant.addEventListener('click', () => {
-        if (this.scene.cameraMode === 'giant') {
-          this.scene.exitGiantView();
+        if (this.scene.cameraMode === 'walkin') {
+          this.scene.exitFirstPersonMode();
         } else {
-          this.scene.enterGiantView(this.scene.activeObjectId);
+          this.scene.enterFirstPersonMode();
         }
+      });
+    }
+
+    if (this.btnExitWalkin) {
+      this.btnExitWalkin.addEventListener('click', () => {
+        this.scene.exitFirstPersonMode();
       });
     }
 
@@ -206,17 +261,21 @@ class LipoRankApp {
       });
     }
 
-    // 8. Register Rank Modal
+    // 8. Register Rank Modal (Bottom Button triggers modal with current slider value prefilled)
     const openModal = () => {
-      if (this.registerModal) this.registerModal.classList.add('active');
-      this.refreshIcons();
+      if (this.registerModal) {
+        const litersInput = document.getElementById('reg-liters');
+        if (litersInput) litersInput.value = this.currentLiters;
+        this.registerModal.classList.add('active');
+        this.refreshIcons();
+      }
     };
     const closeModal = () => {
       if (this.registerModal) this.registerModal.classList.remove('active');
     };
 
-    if (this.btnRegisterRank) {
-      this.btnRegisterRank.addEventListener('click', openModal);
+    if (this.btnRegisterRankBottom) {
+      this.btnRegisterRankBottom.addEventListener('click', openModal);
     }
     if (this.modalClose) {
       this.modalClose.addEventListener('click', closeModal);
@@ -248,35 +307,28 @@ class LipoRankApp {
         // Build private tower immediately on stage!
         this.scene.buildCubeTower(pending.totalLiters, true);
 
-        alert(`[${formData.name}] 원장님의 공인 랭크 등록 신청이 접수되었습니다!\n\n관리자 심사 완료 전까지 원장님 브라우저에서 [공인 심사 진행중 (나만 보기 모드)]로 원장님만의 3D 큐브 탑을 감상하실 수 있습니다.`);
+        alert(`[${formData.name}] 원장님의 공인 랭크 등록 신청이 정상 접수되었습니다!\n\n관리자 심사 완료 전까지 원장님 브라우저에서 [공인 심사 진행중 (나만 보기 모드)]로 원장님만의 3D 큐브 탑을 감상하실 수 있습니다.`);
         closeModal();
         this.registerForm.reset();
-      });
-    }
-
-    // Click "내 탑 3D 보기"
-    if (this.btnViewMyTower) {
-      this.btnViewMyTower.addEventListener('click', () => {
-        if (this.myPendingTower) {
-          this.currentLiters = this.myPendingTower.totalLiters;
-          if (this.volSlider) this.volSlider.value = this.currentLiters;
-          this.scene.setVolume(this.currentLiters);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
       });
     }
   }
 
   handleCameraModeUI(mode, cfg) {
     const isGiant = (mode === 'giant');
+    const isWalkin = (mode === 'walkin');
+
     if (this.giantViewCard) {
       this.giantViewCard.classList.toggle('active', isGiant);
     }
+    if (this.walkinHud) {
+      this.walkinHud.classList.toggle('active', isWalkin);
+    }
     if (this.labelsOverlay) {
-      this.labelsOverlay.classList.toggle('hidden', isGiant);
+      this.labelsOverlay.classList.toggle('hidden', isGiant || isWalkin);
     }
     if (this.giantBtnText) {
-      this.giantBtnText.textContent = isGiant ? '전체보기 복귀' : '3D 세상 직접 들어가기';
+      this.giantBtnText.textContent = (isWalkin || isGiant) ? '전체보기 복귀' : '3D 세상 직접 들어가기';
     }
     if (isGiant && cfg) {
       this.updateGiantCard(cfg.id);
@@ -338,7 +390,7 @@ class LipoRankApp {
     }
 
     if (this.flexComparisonText) {
-      const cfg = COMPARISON_OBJECTS.find(c => c.id === objectId) || COMPARISON_OBJECTS[2];
+      const cfg = COMPARISON_OBJECTS.find(c => c.id === objectId) || COMPARISON_OBJECTS[1];
       let customMsg = `<strong>1m³(1,000L) 큐브 ${cubeCount}개</strong> 및 <strong>${cfg.name}</strong> 완판 체적입니다!`;
       if (objectId === 'lamborghini') {
         const pct = ((liters / 4700) * 100).toFixed(1);
@@ -352,6 +404,9 @@ class LipoRankApp {
       } else if (objectId === 'statue_of_liberty') {
         const pct = ((liters / 15000) * 100).toFixed(1);
         customMsg = `<strong>1m³ 큐브 ${cubeCount}개</strong> 및 <strong>자유의 여신상 기단부의 ${pct}%</strong>에 도달한 거대한 실적입니다!`;
+      } else if (objectId === 'swimming_pool') {
+        const pct = ((liters / 2500000) * 100).toFixed(4);
+        customMsg = `<strong>1m³ 큐브 ${cubeCount}개</strong> 및 올림픽 공인 수영장의 <strong>${pct}%</strong>에 해당하는 체적입니다!`;
       }
       this.flexComparisonText.innerHTML = customMsg;
     }
@@ -362,71 +417,77 @@ class LipoRankApp {
   }
 
   renderMyPendingBanner() {
-    if (!this.myPendingBanner) return;
     if (this.myPendingTower) {
-      this.myPendingBanner.style.display = 'flex';
-      if (this.myPendingName) this.myPendingName.textContent = this.myPendingTower.name;
-      if (this.myPendingClinic) this.myPendingClinic.textContent = this.myPendingTower.clinic;
-      if (this.myPendingLiters) this.myPendingLiters.textContent = `${this.myPendingTower.totalLiters.toLocaleString()} L`;
+      if (this.myPendingBannerHome) {
+        this.myPendingBannerHome.style.display = 'flex';
+        if (this.myPendingNameHome) this.myPendingNameHome.textContent = this.myPendingTower.name;
+        if (this.myPendingClinicHome) this.myPendingClinicHome.textContent = this.myPendingTower.clinic;
+        if (this.myPendingLitersHome) this.myPendingLitersHome.textContent = `${this.myPendingTower.totalLiters.toLocaleString()} L`;
+      }
     } else {
-      this.myPendingBanner.style.display = 'none';
+      if (this.myPendingBannerHome) this.myPendingBannerHome.style.display = 'none';
     }
     this.refreshIcons();
   }
 
-  renderLeaderboard() {
-    if (!this.doctorsTableBody) return;
-    this.doctorsTableBody.innerHTML = '';
+  renderLeaderboards() {
+    const renderRows = (container) => {
+      if (!container) return;
+      container.innerHTML = '';
 
-    this.doctors.forEach(doc => {
-      const row = document.createElement('tr');
+      this.doctors.forEach(doc => {
+        const row = document.createElement('tr');
 
-      row.innerHTML = `
-        <td>
-          <div class="rank-badge">${doc.rank}</div>
-        </td>
-        <td>
-          <div class="doc-profile-cell">
-            <img src="${doc.avatar}" class="doc-img" alt="${doc.name}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(doc.name)}&background=0953ff&color=fff'">
-            <div class="doc-info-text">
-              <div class="name">${doc.name}</div>
-              <div class="sub">${doc.clinic} · 의사면허 ${doc.licenseNo}</div>
+        row.innerHTML = `
+          <td>
+            <div class="rank-badge">${doc.rank}</div>
+          </td>
+          <td>
+            <div class="doc-profile-cell">
+              <img src="${doc.avatar}" class="doc-img" alt="${doc.name}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(doc.name)}&background=0953ff&color=fff'">
+              <div class="doc-info-text">
+                <div class="name">${doc.name}</div>
+                <div class="sub">${doc.clinic} · 의사면허 ${doc.licenseNo}</div>
+              </div>
             </div>
-          </div>
-        </td>
-        <td>
-          <strong style="color: #0953ff; font-size: 15px;">${doc.totalLiters.toLocaleString()} L</strong>
-          <span style="font-size: 11px; color: #9ca3af; display: block;">수술 ${doc.totalCases.toLocaleString()}건 (1m³ 큐브 ${(doc.totalLiters / 1000).toFixed(2)}개)</span>
-        </td>
-        <td>
-          <strong>${doc.avgCcPerCase.toLocaleString()} cc</strong>
-          <span style="font-size: 11px; color: #9ca3af; display: block;">순수지방 ${doc.pureFatRatio}%</span>
-        </td>
-        <td>
-          <span class="badge-verified">
-            <i data-lucide="shield-check" class="icon-sm"></i>
-            <span>${doc.badge}</span>
-          </span>
-        </td>
-        <td>
-          <button class="btn-fill-beaker" data-liters="${doc.totalLiters}" title="해당 원장님의 1m³ 큐브 탑 & 람보르기니 연동">
-            <span>3D 체급 연동</span>
-            <i data-lucide="arrow-right" class="icon-sm"></i>
-          </button>
-        </td>
-      `;
+          </td>
+          <td>
+            <strong style="color: #0953ff; font-size: 15px;">${doc.totalLiters.toLocaleString()} L</strong>
+            <span style="font-size: 11px; color: #94a3b8; display: block;">수술 ${doc.totalCases.toLocaleString()}건 (1m³ 큐브 ${(doc.totalLiters / 1000).toFixed(2)}개)</span>
+          </td>
+          <td>
+            <strong>${doc.avgCcPerCase.toLocaleString()} cc</strong>
+            <span style="font-size: 11px; color: #94a3b8; display: block;">순수지방 ${doc.pureFatRatio}%</span>
+          </td>
+          <td>
+            <span class="badge-verified">
+              <i data-lucide="shield-check" class="icon-sm"></i>
+              <span>${doc.badge}</span>
+            </span>
+          </td>
+          <td>
+            <button class="btn-fill-beaker" data-liters="${doc.totalLiters}" title="해당 원장님의 1m³ 큐브 탑 & 사물 체급 연동">
+              <span>3D 체급 연동</span>
+              <i data-lucide="arrow-right" class="icon-sm"></i>
+            </button>
+          </td>
+        `;
 
-      row.querySelector('.btn-fill-beaker').addEventListener('click', () => {
-        this.currentLiters = doc.totalLiters;
-        if (this.volSlider) this.volSlider.value = doc.totalLiters;
-        this.scene.setVolume(doc.totalLiters);
-        this.scene.setActiveObject('lamborghini');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        row.querySelector('.btn-fill-beaker').addEventListener('click', () => {
+          this.currentLiters = doc.totalLiters;
+          if (this.volSlider) this.volSlider.value = doc.totalLiters;
+          this.scene.setVolume(doc.totalLiters);
+          // Navigate to home and smoothly scroll to 3D canvas
+          window.location.hash = '#home';
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        container.appendChild(row);
       });
+    };
 
-      this.doctorsTableBody.appendChild(row);
-    });
-
+    renderRows(this.homeDoctorsTableBody);
+    renderRows(this.fullDoctorsTableBody);
     this.refreshIcons();
   }
 }

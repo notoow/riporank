@@ -1,21 +1,21 @@
 /**
  * LipoRank Verified Doctor Data Store
- * Manages official verified doctors & user's private pending tower
+ * Official verified doctor record (SAMPLE 원장) & user's private pending application
  */
 
 export const initialDoctors = [
   {
     id: "doc-adm-01",
     rank: 1,
-    name: "김지훈 대표원장",
+    name: "SAMPLE 원장",
     clinic: "더슬림 메디컬의원 (강남본점)",
-    specialty: "복부 / 대용량 지방흡입",
+    specialty: "복부 / 대용량 지방흡입 특화",
     licenseNo: "제58210호",
     totalLiters: 4820,
     totalCases: 1967,
     avgCcPerCase: 2450,
     pureFatRatio: 89,
-    status: "verified", // Official verified
+    status: "verified", // Official verified doctor
     isOfficial: true,
     verifiedDate: "2026-10-15",
     badge: "CRM 전산 실시간 연동 공인",
