@@ -1,134 +1,79 @@
 /**
- * LipoRank Comparison Objects Data
- * Based on Reference Mockups & Realistic Scale Factors
- * Uses Lucide Icon identifiers (No emojis)
+ * 3D Objects Comparison Specifications
+ * Real-world volumetric capacities & 3D layout configurations
  */
-
-export const comparisonObjects = [
+export const COMPARISON_OBJECTS = [
   {
-    id: "bottle-500",
-    name: "생수병",
-    detail: "휴대용 생수병 (500ml)",
-    category: "daily",
+    id: 'fiji_bottle',
+    name: '생수병',
+    subText: '휴대용 500ml 규격',
     volumeLiters: 0.5,
-    volumeMl: 500,
-    lucideIcon: "cup-soda",
-    color: "#60a5fa",
-    modelType: "cylinder",
-    dimensions: { radius: 0.035, height: 0.22 },
-    description: "일상에서 가장 쉽게 체감할 수 있는 500ml 생수병 기준입니다."
+    volumeMlText: '500ml',
+    modelPath: './assets/models/fiji_water_bottle.glb',
+    targetHeight: 1.05,
+    position: [-4.2, 0, 0.0],
+    rotation: [0, 0.15, 0], // Perfectly upright
+    description: '휴대용 생수병 (500ml)',
+    getRatioText: (liters) => `${(liters / 0.5).toLocaleString('ko-KR')}병 분량`
   },
   {
-    id: "bottle-2000",
-    name: "대형 생수병",
-    detail: "가정용 2L 생수병",
-    category: "daily",
-    volumeLiters: 2.0,
-    volumeMl: 2000,
-    lucideIcon: "milk",
-    color: "#3b82f6",
-    modelType: "cylinder",
-    dimensions: { radius: 0.055, height: 0.32 },
-    description: "일반적인 1회 지방흡입 평균 추출량(약 2,000cc)과 유사합니다."
-  },
-  {
-    id: "bathtub",
-    name: "가정용 욕조",
-    detail: "표준 성인 욕조 (200L)",
-    category: "daily",
-    volumeLiters: 200,
-    volumeMl: 200000,
-    lucideIcon: "bath",
-    color: "#e2e8f0",
-    modelType: "bathtub",
-    dimensions: { length: 1.5, width: 0.7, height: 0.5 },
-    description: "일반 가정용 욕조에 가득 찬 물의 양(약 200L)입니다."
-  },
-  {
-    id: "drum-200",
-    name: "공업용 드럼통",
-    detail: "200L 스틸 오일 드럼",
-    category: "daily",
-    volumeLiters: 200,
-    volumeMl: 200000,
-    lucideIcon: "cylinder",
-    color: "#334155",
-    modelType: "cylinder",
-    dimensions: { radius: 0.29, height: 0.88 },
-    description: "표준 산업용 200L 드럼통 기준입니다."
-  },
-  {
-    id: "cow",
-    name: "성체 젖소 (체지방량)",
-    detail: "소 한 마리 체지방 총량",
-    category: "animal",
-    volumeLiters: 300,
-    volumeMl: 300000,
-    lucideIcon: "beef",
-    color: "#f8fafc",
-    modelType: "cow",
-    dimensions: { length: 2.2, width: 0.9, height: 1.5 },
-    description: "성체 젖소(약 650kg)의 체지방 추정 총량(약 300L)입니다."
-  },
-  {
-    id: "lamborghini",
-    name: "람보르기니 우라칸",
-    detail: "슈퍼카 차체 볼륨",
-    category: "vehicle",
-    volumeLiters: 4700,
-    volumeMl: 4700000,
-    lucideIcon: "car",
-    color: "#eab308",
-    modelType: "car",
-    dimensions: { length: 4.5, width: 1.9, height: 1.16 },
-    description: "람보르기니 우라칸의 전체 내부 객실 및 트렁크 환산 부피입니다."
-  },
-  {
-    id: "cybertruck",
-    name: "테슬라 사이버트럭",
-    detail: "픽업트럭 베드 & 캡 볼륨",
-    category: "vehicle",
-    volumeLiters: 5200,
-    volumeMl: 5200000,
-    lucideIcon: "truck",
-    color: "#94a3b8",
-    modelType: "truck",
-    dimensions: { length: 5.68, width: 2.2, height: 1.79 },
-    description: "사이버트럭의 카고 베드 및 주요 수납 체적(약 5,200L)입니다."
-  },
-  {
-    id: "pool",
-    name: "올림픽 공인 수영장",
-    detail: "50m × 25m × 2m 규격 수영장",
-    category: "architecture",
+    id: 'swimming_pool',
+    name: '올림픽 수영장',
+    subText: '50m 규격 공인 수영장',
     volumeLiters: 2500000,
-    volumeMl: 2500000000,
-    lucideIcon: "waves",
-    color: "#0284c7",
-    modelType: "pool",
-    dimensions: { length: 5.0, width: 2.5, height: 0.2 },
-    description: "국제 규격 올림픽 수영장의 총 저수량(250만 리터)입니다."
+    volumeMlText: '2,500,000L',
+    modelPath: './assets/models/swimming_pool_343.glb',
+    targetWidth: 1.6,
+    position: [-2.1, 0, -0.1],
+    rotation: [0, -Math.PI * 0.65, 0], // Perspective showing front entrance steps
+    description: '50m × 25m × 2m 공인 규격 (2,500,000L)',
+    getRatioText: (liters) => `${((liters / 2500000) * 100).toFixed(4)}% 수위`
+  },
+  {
+    id: 'lamborghini',
+    name: '람보르기니 우라칸',
+    subText: '슈퍼카 차체 볼륨',
+    volumeLiters: 4700,
+    volumeMlText: '4,700L',
+    modelPath: './assets/models/lambo_lp670.glb',
+    targetLength: 1.95,
+    position: [0.0, 0, 0.1], // Center spotlight
+    rotation: [0, -Math.PI * 0.25, 0], // Front headlights towards camera
+    description: '람보르기니 슈퍼카 차체 실내외 체적 (약 4,700L)',
+    getRatioText: (liters) => `${((liters / 4700) * 100).toFixed(1)}% (약 ${(liters / 4700).toFixed(2)}대 완판)`
+  },
+  {
+    id: 'cybertruck',
+    name: '사이버트럭',
+    subText: '픽업 캡 & 베드 볼륨',
+    volumeLiters: 7100,
+    volumeMlText: '7,100L',
+    modelPath: './assets/models/Cyber_truck.glb',
+    targetLength: 2.1,
+    position: [2.2, 0, 0.0],
+    rotation: [0, -Math.PI * 0.22, 0], // Front lightbar towards camera!
+    description: '테슬라 사이버트럭 캐빈 및 베드 총 용적 (약 7,100L)',
+    getRatioText: (liters) => `${((liters / 7100) * 100).toFixed(1)}% 충전`
+  },
+  {
+    id: 'statue_of_liberty',
+    name: '자유의 여신상',
+    subText: '기단부 랜드마크 스케일',
+    volumeLiters: 15000,
+    volumeMlText: '15,000L',
+    modelPath: './assets/models/statue_of_liberty.glb',
+    targetHeight: 1.6,
+    position: [4.2, 0, 0.0],
+    rotation: [0, Math.PI * 0.12, 0],
+    description: '뉴욕 자유의 여신상 기단부 체적 (약 15,000L)',
+    getRatioText: (liters) => `${((liters / 15000) * 100).toFixed(1)}% 도달`
   }
 ];
 
-export function calculateMultipliers(selectedLiters) {
-  return comparisonObjects.map(obj => {
-    const ratio = selectedLiters / obj.volumeLiters;
-    let formatted;
-    if (ratio >= 1000) {
-      formatted = `${ratio.toLocaleString(undefined, { maximumFractionDigits: 0 })}배`;
-    } else if (ratio >= 1) {
-      formatted = `${ratio.toFixed(2)}배`;
-    } else if (ratio >= 0.0001) {
-      formatted = `${(ratio * 100).toFixed(4)}%`;
-    } else {
-      formatted = `${(ratio * 100).toExponential(2)}%`;
-    }
-
-    return {
-      ...obj,
-      ratio,
-      formattedRatio: formatted
-    };
-  });
+export function getBestMatchingObject(liters) {
+  if (liters <= 100) return 'fiji_bottle';
+  if (liters <= 5500) return 'lamborghini';
+  if (liters <= 10000) return 'cybertruck';
+  if (liters <= 50000) return 'statue_of_liberty';
+  return 'swimming_pool';
 }

@@ -1,29 +1,39 @@
 /**
  * LipoRank High-Fidelity 3D Scene
- * Lineup Layout (Exact Match to User Reference Image):
- * [Fiji Water] -- [Olympic Pool] -- [CENTER CAN JAR] -- [Lamborghini] -- [Cybertruck]
- * Perfectly Oriented Three-Quarter Angles, Clean Studio Lighting & Contact Shadows
+ * Perfectly spaced 5 Objects in pure studio lighting:
+ * [Fiji Water] -- [Olympic Pool] -- [Lamborghini] -- [Cybertruck] -- [Statue of Liberty]
+ * Feature: Active Object converts to Crystal Glass Shell with Golden Fat fluid fill & surface meniscus
  */
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
 import { GLTFLoader } from './vendor/loaders/GLTFLoader.js';
-import { FatFluidSystem } from './fat-fluid.js';
+import { COMPARISON_OBJECTS, getBestMatchingObject } from './objects-data.js';
 
 export class LipoRankScene {
   constructor(canvasContainer, options = {}) {
     this.container = canvasContainer;
     this.onVolumeChange = options.onVolumeChange || (() => {});
-    this.selectedLiters = options.initialLiters || 3000;
-    this.isAutoRotate = false;
+    this.onObjectChange = options.onObjectChange || (() => {});
+    this.selectedLiters = options.initialLiters || 4820; // Default: Top rank doctor 4,820L
+
+    this.activeObjectId = options.initialObjectId || 'lamborghini';
+    this.objectConfigs = COMPARISON_OBJECTS;
 
     this.loader = new GLTFLoader();
-    this.models = {};
+    this.models = {};           // outer shell scenes
+    this.modelHolders = {};      // holder groups on stage
+    this.originalMaterials = new Map(); // cache original materials
+    this.fatMeshes = {};        // internal fat duplicate meshes
+    this.clipPlanes = {};       // clipping planes per object
+    this.targetFillPcts = {};   // target fill percent [0, 1]
+    this.currentFillPcts = {};  // animated current fill percent
+    this.worldBounds = {};      // accurate world bounding boxes
 
     this.init();
     this.initLights();
     this.initStudioFloor();
-    this.initCenterFatJar();
-    this.loadLineupModels();
+    this.initMaterials();
+    this.loadAllObjects();
     this.initControls();
     this.initEvents();
     this.animate();
@@ -31,16 +41,16 @@ export class LipoRankScene {
 
   init() {
     this.scene = new THREE.Scene();
-    // Ultra Clean Pure White Studio Fog & Background
     this.scene.background = new THREE.Color(0xfcfdfe);
-    this.scene.fog = new THREE.FogExp2(0xfcfdfe, 0.018);
+    this.scene.fog = new THREE.FogExp2(0xfcfdfe, 0.012);
 
     const width = this.container.clientWidth || window.innerWidth;
     const height = this.container.clientHeight || window.innerHeight;
 
-    // Perspective matching reference screenshot (front-parallel wide camera)
-    this.camera = new THREE.PerspectiveCamera(35, width / height, 0.1, 100);
-    this.camera.position.set(0, 1.25, 5.5);
+    // Front-parallel eye-level perspective with wide view for 5 objects
+    this.camera = new THREE.PerspectiveCamera(26, width / height, 0.1, 100);
+    this.camera.position.set(0, 0.58, 8.2);
+    this.camera.lookAt(0, 0.58, 0);
 
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -51,55 +61,51 @@ export class LipoRankScene {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.localClippingEnabled = true;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.08;
+    this.renderer.toneMappingExposure = 1.14;
 
     this.container.appendChild(this.renderer.domElement);
     this.clock = new THREE.Clock();
   }
 
   initLights() {
-    // Soft high-key ambient studio light
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xf1f5f9, 1.6);
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xf1f5f9, 2.0);
     this.scene.add(hemiLight);
 
-    // Main key light from top-front-right for natural soft floor shadows
-    this.mainLight = new THREE.DirectionalLight(0xffffff, 2.2);
-    this.mainLight.position.set(5, 12, 7);
+    this.mainLight = new THREE.DirectionalLight(0xffffff, 2.5);
+    this.mainLight.position.set(7, 14, 9);
     this.mainLight.castShadow = true;
     this.mainLight.shadow.mapSize.width = 2048;
     this.mainLight.shadow.mapSize.height = 2048;
     this.mainLight.shadow.camera.near = 0.5;
-    this.mainLight.shadow.camera.far = 25;
-    this.mainLight.shadow.camera.left = -6;
-    this.mainLight.shadow.camera.right = 6;
-    this.mainLight.shadow.camera.top = 6;
-    this.mainLight.shadow.camera.bottom = -3;
+    this.mainLight.shadow.camera.far = 35;
+    this.mainLight.shadow.camera.left = -10;
+    this.mainLight.shadow.camera.right = 10;
+    this.mainLight.shadow.camera.top = 8;
+    this.mainLight.shadow.camera.bottom = -4;
     this.mainLight.shadow.bias = -0.0001;
     this.scene.add(this.mainLight);
 
-    // Fill light from left to soften car contours
-    const fillLight = new THREE.DirectionalLight(0xf1f5f9, 1.0);
-    fillLight.position.set(-6, 6, 4);
+    const fillLight = new THREE.DirectionalLight(0xf1f5f9, 1.3);
+    fillLight.position.set(-8, 7, 5);
     this.scene.add(fillLight);
 
-    // Warm glow point light behind the central fat jar
-    const jarBackGlow = new THREE.PointLight(0xf59e0b, 1.4, 5);
-    jarBackGlow.position.set(0, 0.9, -1.2);
-    this.scene.add(jarBackGlow);
+    // Warm golden glow behind active fat model
+    this.fatGlow = new THREE.PointLight(0xf59e0b, 1.8, 6);
+    this.fatGlow.position.set(0, 0.8, -1.0);
+    this.scene.add(this.fatGlow);
   }
 
   initStudioFloor() {
-    // Pure White Seamless Studio Floor
-    const floorGeo = new THREE.PlaneGeometry(50, 50);
-    const floorMat = new THREE.ShadowMaterial({ opacity: 0.14 });
+    const floorGeo = new THREE.PlaneGeometry(80, 80);
+    const floorMat = new THREE.ShadowMaterial({ opacity: 0.12 });
     const shadowFloor = new THREE.Mesh(floorGeo, floorMat);
     shadowFloor.rotation.x = -Math.PI / 2;
     shadowFloor.position.y = 0;
     shadowFloor.receiveShadow = true;
     this.scene.add(shadowFloor);
 
-    // Base background plate
     const baseMat = new THREE.MeshBasicMaterial({ color: 0xfcfdfe });
     const baseFloor = new THREE.Mesh(floorGeo, baseMat);
     baseFloor.rotation.x = -Math.PI / 2;
@@ -107,73 +113,84 @@ export class LipoRankScene {
     this.scene.add(baseFloor);
   }
 
-  initCenterFatJar() {
-    // Central Aluminum-Lid Glass Can Jar with Golden Fat & Sloshing
-    this.fatSystem = new FatFluidSystem(this.scene, {
-      maxLiters: 5000,
-      initialLiters: this.selectedLiters
+  initMaterials() {
+    // 1. Crystal Glass Shell Material
+    this.glassMaterial = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color(0xffffff),
+      metalness: 0.05,
+      roughness: 0.08,
+      transmission: 0.94,
+      thickness: 0.75,
+      ior: 1.5,
+      transparent: true,
+      opacity: 0.42,
+      reflectivity: 0.9,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.05,
+      side: THREE.DoubleSide
     });
-    this.fatSystem.group.position.set(0, 0, 0);
   }
 
-  loadLineupModels() {
-    this.modelsGroup = new THREE.Group();
-    this.scene.add(this.modelsGroup);
+  loadAllObjects() {
+    this.lineupGroup = new THREE.Group();
+    this.scene.add(this.lineupGroup);
 
-    // Exact Lineup Configurations (Matching User Reference Image):
-    // 1. Fiji Water (Leftmost)
-    // 2. Olympic Pool (Left-Mid, perspective)
-    // 3. Center Fat Jar (Center at x=0)
-    // 4. Lamborghini LP670 (Right-Mid, front angled towards camera)
-    // 5. Cybertruck (Rightmost, front angled towards camera)
-    const modelConfigs = [
-      {
-        id: 'fiji_bottle',
-        path: './assets/models/fiji_water_bottle.glb',
-        targetHeight: 0.92,
-        position: [-2.85, 0, 0.05],
-        rotation: [0, 0.15, 0]
-      },
-      {
-        id: 'swimming_pool',
-        path: './assets/models/swimming_pool_343.glb',
-        targetWidth: 1.75,
-        position: [-1.45, 0, -0.05],
-        rotation: [0, -0.20, 0] // Perspective showing front steps
-      },
-      {
-        id: 'lamborghini',
-        path: './assets/models/lambo_lp670.glb',
-        targetLength: 1.85,
-        position: [1.25, 0, 0.05],
-        // Facing front-three-quarter towards camera (Front headlights visible)
-        rotation: [0, Math.PI * 0.26, 0]
-      },
-      {
-        id: 'cybertruck',
-        path: './assets/models/Cyber_truck.glb',
-        targetLength: 2.15,
-        position: [2.95, 0, 0.0],
-        // Facing front-three-quarter towards camera (Front lightbar visible)
-        rotation: [0, Math.PI * 0.28, 0]
-      }
-    ];
-
-    modelConfigs.forEach(cfg => {
+    this.objectConfigs.forEach(cfg => {
       this.loader.load(
-        cfg.path,
+        cfg.modelPath,
         gltf => {
           const root = gltf.scene;
+          this.models[cfg.id] = root;
 
-          root.traverse(child => {
-            if (child.isMesh) {
-              child.castShadow = true;
-              child.receiveShadow = true;
+          // Cache original materials
+          root.traverse(c => {
+            if (c.isMesh) {
+              this.originalMaterials.set(c, c.material);
+              c.castShadow = true;
+              c.receiveShadow = true;
             }
           });
 
-          // Normalize Scale
-          const box = new THREE.Box3().setFromObject(root);
+          // Container group for outer shell + inner fat
+          const holder = new THREE.Group();
+          holder.name = cfg.id;
+
+          // 1. Outer Shell
+          holder.add(root);
+
+          // 2. Inner Fat Mesh (Duplicate)
+          const fatMesh = root.clone();
+          const clipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 100);
+          this.clipPlanes[cfg.id] = clipPlane;
+
+          const fatMaterial = new THREE.MeshStandardMaterial({
+            color: new THREE.Color(0xf59e0b),
+            emissive: new THREE.Color(0xb45309),
+            emissiveIntensity: 0.45,
+            roughness: 0.22,
+            metalness: 0.08,
+            clippingPlanes: [clipPlane],
+            clipShadows: true,
+            side: THREE.DoubleSide
+          });
+
+          fatMesh.traverse(c => {
+            if (c.isMesh) {
+              c.material = fatMaterial;
+              c.castShadow = false;
+            }
+          });
+          fatMesh.scale.setScalar(0.99); // snug fit inside glass
+          fatMesh.visible = false;
+          holder.add(fatMesh);
+          this.fatMeshes[cfg.id] = fatMesh;
+
+          // Normalize size & place firmly on floor y = 0
+          if (cfg.rotation) {
+            holder.rotation.set(cfg.rotation[0], cfg.rotation[1], cfg.rotation[2]);
+          }
+
+          const box = new THREE.Box3().setFromObject(holder);
           const size = box.getSize(new THREE.Vector3());
 
           let scale = 1.0;
@@ -184,48 +201,139 @@ export class LipoRankScene {
           } else if (cfg.targetLength) {
             scale = cfg.targetLength / (Math.max(size.x, size.z) || 1);
           }
+          holder.scale.setScalar(scale);
 
-          root.scale.setScalar(scale);
-
-          // Ground to y = 0
-          box.setFromObject(root);
-          root.position.set(
+          box.setFromObject(holder);
+          holder.position.set(
             cfg.position[0],
-            cfg.position[1] - box.min.y,
+            -box.min.y,
             cfg.position[2]
           );
 
-          if (cfg.rotation) {
-            root.rotation.set(cfg.rotation[0], cfg.rotation[1], cfg.rotation[2]);
-          }
+          this.lineupGroup.add(holder);
+          this.modelHolders[cfg.id] = holder;
+          this.targetFillPcts[cfg.id] = 0;
+          this.currentFillPcts[cfg.id] = 0;
 
-          this.modelsGroup.add(root);
-          this.models[cfg.id] = root;
+          // Compute accurate world bounds
+          holder.updateMatrixWorld(true);
+          const worldBox = new THREE.Box3().setFromObject(holder);
+          this.worldBounds[cfg.id] = {
+            minY: worldBox.min.y,
+            maxY: worldBox.max.y,
+            height: worldBox.max.y - worldBox.min.y
+          };
+
+          // If this is the active object, apply glass fill immediately
+          if (cfg.id === this.activeObjectId) {
+            this.applyGlassFill(cfg.id, this.selectedLiters);
+          }
         },
         undefined,
-        err => console.warn(`Model load error for ${cfg.path}`, err)
+        err => console.warn(`Error loading model ${cfg.modelPath}:`, err)
       );
     });
+  }
+
+  setActiveObject(objectId) {
+    if (!this.objectConfigs.find(c => c.id === objectId)) return;
+    
+    // Revert previous active object to solid original
+    if (this.activeObjectId && this.activeObjectId !== objectId) {
+      this.revertToSolid(this.activeObjectId);
+    }
+
+    this.activeObjectId = objectId;
+    this.applyGlassFill(objectId, this.selectedLiters);
+    this.onObjectChange(objectId);
+  }
+
+  applyGlassFill(objectId, liters) {
+    const root = this.models[objectId];
+    const fatMesh = this.fatMeshes[objectId];
+    const holder = this.modelHolders[objectId];
+    const cfg = this.objectConfigs.find(c => c.id === objectId);
+
+    if (!root || !fatMesh || !holder || !cfg) return;
+
+    // Convert outer shell meshes to transparent crystal glass
+    root.traverse(c => {
+      if (c.isMesh) {
+        c.material = this.glassMaterial;
+      }
+    });
+
+    // Make inner fat visible
+    fatMesh.visible = true;
+
+    // Calculate fill percentage relative to this object's capacity
+    const ratio = liters / cfg.volumeLiters;
+    const clampedPct = Math.min(Math.max(ratio, 0.05), 1.0);
+    this.targetFillPcts[objectId] = clampedPct;
+
+    // Move warm fat glow to active object
+    if (this.fatGlow) {
+      this.fatGlow.position.set(cfg.position[0], 0.7, cfg.position[2] - 0.8);
+    }
+  }
+
+  revertToSolid(objectId) {
+    const root = this.models[objectId];
+    const fatMesh = this.fatMeshes[objectId];
+
+    if (!root) return;
+
+    // Restore original materials
+    root.traverse(c => {
+      if (c.isMesh && this.originalMaterials.has(c)) {
+        c.material = this.originalMaterials.get(c);
+      }
+    });
+
+    // Hide inner fat
+    if (fatMesh) {
+      fatMesh.visible = false;
+    }
+  }
+
+  setVolume(liters) {
+    this.selectedLiters = liters;
+    
+    // Update active glass fill
+    if (this.activeObjectId) {
+      this.applyGlassFill(this.activeObjectId, liters);
+    }
+
+    this.onVolumeChange(liters);
+  }
+
+  nextObject() {
+    const currentIndex = this.objectConfigs.findIndex(c => c.id === this.activeObjectId);
+    const nextIndex = (currentIndex + 1) % this.objectConfigs.length;
+    this.setActiveObject(this.objectConfigs[nextIndex].id);
+  }
+
+  prevObject() {
+    const currentIndex = this.objectConfigs.findIndex(c => c.id === this.activeObjectId);
+    const prevIndex = (currentIndex - 1 + this.objectConfigs.length) % this.objectConfigs.length;
+    this.setActiveObject(this.objectConfigs[prevIndex].id);
   }
 
   initControls() {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
-    this.controls.dampingFactor = 0.06;
-    this.controls.minDistance = 3.5;
+    this.controls.dampingFactor = 0.07;
+    this.controls.minDistance = 4.5;
     this.controls.maxDistance = 14.0;
-    this.controls.maxPolarAngle = Math.PI / 2 - 0.02;
-    this.controls.minPolarAngle = 0.2;
-    this.controls.target.set(0, 0.75, 0);
+    
+    // Strictly restrict polar angle to maintain clean eye-level studio look
+    this.controls.maxPolarAngle = Math.PI / 2 - 0.01;
+    this.controls.minPolarAngle = Math.PI / 2.12;
+    this.controls.target.set(0, 0.58, 0);
   }
 
   initEvents() {
     window.addEventListener('resize', () => this.onWindowResize());
-    this.container.addEventListener('pointerdown', () => {
-      if (this.fatSystem) {
-        this.fatSystem.triggerSlosh(0.06);
-      }
-    });
   }
 
   onWindowResize() {
@@ -236,39 +344,26 @@ export class LipoRankScene {
     this.renderer.setSize(width, height);
   }
 
-  setVolume(liters, animatePour = true) {
-    this.selectedLiters = liters;
-    if (this.fatSystem) {
-      if (animatePour) {
-        this.fatSystem.pourTo(liters);
-      } else {
-        this.fatSystem.updateFluidLevel(liters);
-      }
-    }
-    this.onVolumeChange(liters);
-  }
-
-  toggleAutoRotate() {
-    this.isAutoRotate = !this.isAutoRotate;
-    this.controls.autoRotate = this.isAutoRotate;
-    this.controls.autoRotateSpeed = 0.8;
-    return this.isAutoRotate;
-  }
-
-  resetCamera() {
-    this.camera.position.set(0, 1.35, 6.2);
-    this.controls.target.set(0, 0.75, 0);
-    this.controls.update();
-  }
-
   animate() {
     requestAnimationFrame(() => this.animate());
 
     const delta = this.clock.getDelta();
     const time = this.clock.getElapsedTime();
 
-    if (this.fatSystem) {
-      this.fatSystem.animate(time, delta);
+    // Smoothly animate fluid level of active object
+    if (this.activeObjectId && this.clipPlanes[this.activeObjectId]) {
+      const b = this.worldBounds[this.activeObjectId];
+      if (b && b.height) {
+        const target = this.targetFillPcts[this.activeObjectId] || 0.8;
+        const current = this.currentFillPcts[this.activeObjectId] || 0;
+        const next = THREE.MathUtils.lerp(current, target, delta * 4.0);
+        this.currentFillPcts[this.activeObjectId] = next;
+
+        // Subtle gentle liquid breathing wave
+        const sloshWave = Math.sin(time * 3.2) * (b.height * 0.008);
+        const planeConstant = b.minY + (b.height * next) + sloshWave;
+        this.clipPlanes[this.activeObjectId].constant = planeConstant;
+      }
     }
 
     this.controls.update();

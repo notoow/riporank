@@ -1,19 +1,22 @@
 /**
  * LipoRank Main Application Controller
- * Minimal Clean Architecture (Exact Match to User Reference Mockup)
+ * Handles 3D Scene events, Doctor viral flex messaging, and leaderboard interactions
  */
 import { LipoRankScene } from './scene.js';
 import { getDoctors, submitDoctorApplication } from './ranking-store.js';
+import { COMPARISON_OBJECTS } from './objects-data.js';
 
 class LipoRankApp {
   constructor() {
-    this.currentLiters = 3000;
+    this.currentLiters = 4820; // Default: Top rank doctor 4,820L
+    this.activeDoctor = getDoctors()[0]; // 1위 김지훈 대표원장
     this.doctors = getDoctors();
 
     this.initElements();
     this.init3DScene();
     this.initUIEvents();
     this.renderLeaderboard();
+    this.updateAllTexts(this.currentLiters, this.scene.activeObjectId);
     this.refreshIcons();
   }
 
@@ -28,31 +31,51 @@ class LipoRankApp {
     this.volSlider = document.getElementById('vol-slider');
     this.currentVolText = document.getElementById('current-vol-text');
     this.centerHighlightAmount = document.getElementById('center-highlight-amount');
+    this.centerHighlightRatio = document.getElementById('center-highlight-ratio');
     this.presetChips = document.querySelectorAll('.chip');
     this.btnRegisterRank = document.getElementById('btn-register-rank');
     this.registerModal = document.getElementById('register-modal');
     this.modalClose = document.getElementById('modal-close');
     this.registerForm = document.getElementById('register-form');
     this.doctorsTableBody = document.getElementById('doctors-table-body');
+
+    // Viral flex banner elements
+    this.flexDocName = document.getElementById('flex-doc-name');
+    this.flexLitersVal = document.getElementById('flex-liters-val');
+    this.flexComparisonText = document.getElementById('flex-comparison-text');
+    this.fatWeightText = document.getElementById('fat-weight-text');
+    this.fatCalText = document.getElementById('fat-cal-text');
+
+    // Carousel buttons & dots
+    this.btnPrev = document.getElementById('carousel-prev');
+    this.btnNext = document.getElementById('carousel-next');
+    this.dots = document.querySelectorAll('.carousel-dots .dot');
+    this.objectTabs = document.querySelectorAll('.object-label-tab, .center-highlight-box');
   }
 
   init3DScene() {
     this.scene = new LipoRankScene(this.canvasContainer, {
       initialLiters: this.currentLiters,
+      initialObjectId: 'lamborghini',
       onVolumeChange: liters => {
-        this.updateVolumeText(liters);
+        this.updateAllTexts(liters, this.scene.activeObjectId);
+      },
+      onObjectChange: objectId => {
+        this.updateObjectTabsAndDots(objectId);
+        this.updateAllTexts(this.currentLiters, objectId);
       }
     });
   }
 
   initUIEvents() {
     // 1. Slider change
-    this.volSlider.addEventListener('input', e => {
-      const liters = Number(e.target.value);
-      this.currentLiters = liters;
-      this.scene.setVolume(liters, false);
-      this.updateVolumeText(liters);
-    });
+    if (this.volSlider) {
+      this.volSlider.addEventListener('input', e => {
+        const liters = Number(e.target.value);
+        this.currentLiters = liters;
+        this.scene.setVolume(liters);
+      });
+    }
 
     // 2. Preset chips
     this.presetChips.forEach(chip => {
@@ -61,19 +84,44 @@ class LipoRankApp {
         chip.classList.add('active');
         const liters = Number(chip.dataset.liters);
         this.currentLiters = liters;
-        this.volSlider.value = liters;
-        this.scene.setVolume(liters, true); // Pour animation
-        this.updateVolumeText(liters);
+        if (this.volSlider) this.volSlider.value = liters;
+        this.scene.setVolume(liters);
       });
     });
 
-    // 3. Register Rank Modal Events
+    // 3. Carousel Navigation (< and >)
+    if (this.btnPrev) {
+      this.btnPrev.addEventListener('click', () => this.scene.prevObject());
+    }
+    if (this.btnNext) {
+      this.btnNext.addEventListener('click', () => this.scene.nextObject());
+    }
+
+    // 4. Object Tab Clicks
+    this.objectTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const objId = tab.dataset.objectId;
+        if (objId) this.scene.setActiveObject(objId);
+      });
+    });
+
+    // 5. Dots Click
+    this.dots.forEach(dot => {
+      dot.addEventListener('click', () => {
+        const idx = Number(dot.dataset.index);
+        if (COMPARISON_OBJECTS[idx]) {
+          this.scene.setActiveObject(COMPARISON_OBJECTS[idx].id);
+        }
+      });
+    });
+
+    // 6. Register Rank Modal
     const openModal = () => {
-      this.registerModal.classList.add('active');
+      if (this.registerModal) this.registerModal.classList.add('active');
       this.refreshIcons();
     };
     const closeModal = () => {
-      this.registerModal.classList.remove('active');
+      if (this.registerModal) this.registerModal.classList.remove('active');
     };
 
     if (this.btnRegisterRank) {
@@ -110,13 +158,68 @@ class LipoRankApp {
     }
   }
 
-  updateVolumeText(liters) {
-    const ml = (liters * 1000).toLocaleString();
+  updateObjectTabsAndDots(objectId) {
+    // Update dots
+    const activeIdx = COMPARISON_OBJECTS.findIndex(c => c.id === objectId);
+    this.dots.forEach((dot, idx) => {
+      dot.classList.toggle('active', idx === activeIdx);
+    });
+
+    // Update object tabs highlight
+    this.objectTabs.forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.objectId === objectId);
+    });
+  }
+
+  updateAllTexts(liters, objectId) {
+    const formattedL = liters.toLocaleString();
     if (this.currentVolText) {
-      this.currentVolText.textContent = `${ml} ml`;
+      this.currentVolText.textContent = `${formattedL} L`;
     }
     if (this.centerHighlightAmount) {
-      this.centerHighlightAmount.textContent = `${ml}ml`;
+      this.centerHighlightAmount.textContent = `${formattedL}L`;
+    }
+    if (this.flexLitersVal) {
+      this.flexLitersVal.textContent = `${formattedL}L`;
+    }
+
+    // Fat physical stats (density approx 0.9 kg/L, 9000 kcal/kg)
+    const kg = Math.round(liters * 0.9);
+    const kcal = Math.round(liters * 0.9 * 9000);
+    if (this.fatWeightText) {
+      this.fatWeightText.textContent = `약 ${kg.toLocaleString()} kg`;
+    }
+    if (this.fatCalText) {
+      this.fatCalText.textContent = `약 ${kcal.toLocaleString()} kcal`;
+    }
+
+    // Update comparison viral message
+    const cfg = COMPARISON_OBJECTS.find(c => c.id === objectId) || COMPARISON_OBJECTS[2];
+    const ratioText = cfg.getRatioText(liters);
+
+    if (this.centerHighlightRatio) {
+      this.centerHighlightRatio.textContent = ratioText;
+    }
+
+    if (this.flexComparisonText) {
+      let customMsg = `<strong>${cfg.name}</strong> 기준 <strong>${ratioText}</strong>를 순수 지방으로 가득 채운 대기록입니다!`;
+      if (objectId === 'lamborghini') {
+        const pct = ((liters / 4700) * 100).toFixed(1);
+        customMsg = `<strong>람보르기니 우라칸 1대(${pct}%)</strong>를 황금빛 순수 지방으로 가득 채운 대기록입니다!`;
+      } else if (objectId === 'cybertruck') {
+        const pct = ((liters / 7100) * 100).toFixed(1);
+        customMsg = `<strong>테슬라 사이버트럭의 ${pct}%</strong>를 황금빛 순수 지방으로 채운 체적입니다!`;
+      } else if (objectId === 'fiji_bottle') {
+        const bottles = Math.round(liters / 0.5);
+        customMsg = `500ml 휴대용 생수병 <strong>${bottles.toLocaleString()}병</strong>을 가득 채운 양입니다!`;
+      } else if (objectId === 'statue_of_liberty') {
+        const pct = ((liters / 15000) * 100).toFixed(1);
+        customMsg = `<strong>자유의 여신상 기단부의 ${pct}%</strong>에 도달한 거대한 실적입니다!`;
+      } else if (objectId === 'swimming_pool') {
+        const pct = ((liters / 2500000) * 100).toFixed(4);
+        customMsg = `올림픽 공인 수영장(250만L)의 <strong>${pct}%</strong>에 해당하는 체적입니다!`;
+      }
+      this.flexComparisonText.innerHTML = customMsg;
     }
   }
 
@@ -155,19 +258,19 @@ class LipoRankApp {
           </span>
         </td>
         <td>
-          <button class="btn-fill-beaker" data-liters="${doc.totalLiters}" title="해당 원장님의 총 흡입량으로 비커 채우기">
-            <span>3D 비커 연동</span>
+          <button class="btn-fill-beaker" data-liters="${doc.totalLiters}" title="해당 원장님의 총 흡입량으로 3D 체급 연동">
+            <span>3D 체급 연동</span>
             <i data-lucide="arrow-right" class="icon-sm"></i>
           </button>
         </td>
       `;
 
-      // Click "3D 비커 연동"
+      // Click "3D 체급 연동"
       row.querySelector('.btn-fill-beaker').addEventListener('click', () => {
         this.currentLiters = doc.totalLiters;
-        this.volSlider.value = Math.min(doc.totalLiters, 5000);
-        this.scene.setVolume(doc.totalLiters, true);
-        this.updateVolumeText(doc.totalLiters);
+        if (this.volSlider) this.volSlider.value = doc.totalLiters;
+        this.scene.setVolume(doc.totalLiters);
+        this.scene.setActiveObject('lamborghini'); // Lambo matches 4820L best
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
 

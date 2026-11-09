@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>LipoRank - 지방흡입 전문의 랭킹 & 3D 볼륨 비교 플랫폼</title>
-  <meta name="description" content="병원 CRM 차트 및 의사면허 공인 검증 전세계 지방흡입 수술량 랭킹 플랫폼. 3D 볼륨 비교 및 내 랭크 등록">
-  <link rel="canonical" href="https://mini-sites-hub.web.app/">
+  <meta name="description" content="병원 CRM 차트 및 의사면허 공인 검증 전세계 지방흡입 전문의 누적 수술량 랭킹 플랫폼. 3D 크리스탈 오브젝트 체급 비교">
+  <link rel="canonical" href="https://riporank.web.app/">
 
   <link rel="stylesheet" href="styles.css">
 
@@ -83,79 +83,100 @@
       <!-- 3D Canvas Viewport with Overlays (Clean Lineup) -->
       <div class="viewport-wrapper">
         
-        <!-- Carousel Nav Buttons (Exact match to Mockup 1) -->
-        <button class="carousel-arrow prev" title="이전">
+        <!-- Carousel Nav Buttons (Matching Mockup 1) -->
+        <button id="carousel-prev" class="carousel-arrow prev" title="이전 사물">
           <i data-lucide="chevron-left"></i>
         </button>
-        <button class="carousel-arrow next" title="다음">
+        <button id="carousel-next" class="carousel-arrow next" title="다음 사물">
           <i data-lucide="chevron-right"></i>
         </button>
 
-        <!-- Floating Labels on Top of Models (Exact 5 Items) -->
+        <!-- 5 Comparison Labels Overlay -->
         <div class="stage-labels-overlay">
-          <div class="object-label">
+          <div class="object-label-tab" data-object-id="fiji_bottle">
             <div class="label-title">생수병</div>
             <div class="label-vol">500ml</div>
           </div>
 
-          <div class="object-label">
+          <div class="object-label-tab" data-object-id="swimming_pool">
             <div class="label-title">올림픽 수영장</div>
-            <div class="label-vol">2,500,000ml</div>
+            <div class="label-vol">2,500,000L</div>
           </div>
           
-          <!-- Center Purple Box -->
-          <div class="center-highlight-box">
-            <div class="tag">지방흡입</div>
-            <div id="center-highlight-amount" class="amount">3,000ml</div>
+          <!-- Center Active Highlight Box (Lambo by default) -->
+          <div id="center-highlight-tab" class="center-highlight-box" data-object-id="lamborghini">
+            <div class="tag">지방흡입 1위 김지훈</div>
+            <div id="center-highlight-amount" class="amount">4,820L</div>
+            <div id="center-highlight-ratio" class="ratio-badge">102.5% 완판</div>
           </div>
 
-          <div class="object-label">
-            <div class="label-title">람보르기니 우라칸</div>
-            <div class="label-vol">5,200,000ml</div>
-          </div>
-
-          <div class="object-label">
+          <div class="object-label-tab" data-object-id="cybertruck">
             <div class="label-title">사이버트럭</div>
-            <div class="label-vol">7,100,000ml</div>
+            <div class="label-vol">7,100L</div>
+          </div>
+
+          <div class="object-label-tab" data-object-id="statue_of_liberty">
+            <div class="label-title">자유의 여신상</div>
+            <div class="label-vol">15,000L</div>
           </div>
         </div>
 
         <!-- Three.js Canvas Container -->
         <div id="canvas-container"></div>
 
-        <!-- Carousel Bottom Dots Indicator (Mockup 1) -->
+        <!-- Carousel Bottom Dots Indicator -->
         <div class="carousel-dots">
-          <span class="dot active"></span>
-          <span class="dot"></span>
-          <span class="dot"></span>
-          <span class="dot"></span>
-          <span class="dot"></span>
+          <span class="dot" data-index="0"></span>
+          <span class="dot" data-index="1"></span>
+          <span class="dot active" data-index="2"></span>
+          <span class="dot" data-index="3"></span>
+          <span class="dot" data-index="4"></span>
         </div>
       </div>
 
-      <!-- Bottom Slider & Presets Strip -->
+      <!-- Doctor Flex Viral Hook Banner -->
+      <div class="doctor-flex-banner">
+        <div class="flex-icon-wrap">
+          <i data-lucide="award" class="icon-md"></i>
+        </div>
+        <div class="flex-content">
+          <div class="flex-headline">
+            <span class="doc-badge-pill">공인 1위</span>
+            <strong id="flex-doc-name">김지훈 대표원장</strong>의 누적 흡입량 
+            <span id="flex-liters-val" class="highlight-num">4,820L</span>는
+          </div>
+          <div id="flex-comparison-text" class="flex-subline">
+            <strong>람보르기니 우라칸 1대(102.5%)</strong>를 황금빛 순수 지방으로 가득 채운 대기록입니다!
+          </div>
+        </div>
+        <div class="flex-stats-pill">
+          <div>환산 무게: <strong id="fat-weight-text">약 4,338 kg</strong></div>
+          <div>열량: <strong id="fat-cal-text">약 38,880,000 kcal</strong></div>
+        </div>
+      </div>
+
+      <!-- Bottom Slider & Quick Preset Chips -->
       <div class="stage-bottom-strip">
         <div class="slider-row">
           <div>
-            <span style="font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase;">선택 흡입량</span>
-            <div id="current-vol-text" class="vol-big-text">3,000 ml</div>
+            <span class="control-label">비교 수술량 조절</span>
+            <div id="current-vol-text" class="vol-big-text">4,820 L</div>
           </div>
-          <div style="font-size: 12px; color: #9ca3af; text-align: right;">
-            순수 지방 환산 무게: <strong style="color: #111827;">약 2.7 kg</strong><br>
-            칼로리: <strong style="color: #f59e0b;">약 24,300 kcal</strong>
+          <div class="unit-toggle">
+            <span class="unit-badge active">Liters (L)</span>
           </div>
         </div>
 
-        <input type="range" id="vol-slider" class="slider-input" min="100" max="5000" step="50" value="3000">
+        <input type="range" id="vol-slider" class="slider-input" min="50" max="15000" step="50" value="4820">
 
         <!-- Quick Select Chips -->
         <div class="quick-chips-row">
-          <button class="chip" data-liters="500">500ml (생수병)</button>
-          <button class="chip" data-liters="1000">1,000ml (1L)</button>
-          <button class="chip" data-liters="2000">2,000ml (2L 평균)</button>
-          <button class="chip active" data-liters="3000">3,000ml (3L 대용량)</button>
-          <button class="chip" data-liters="4820">4,820ml (1위 김지훈 원장)</button>
-          <button class="chip" data-liters="5000">5,000ml (MAX)</button>
+          <button class="chip" data-liters="500">500L (생수병 1,000병)</button>
+          <button class="chip" data-liters="2000">2,000L (2L 평균)</button>
+          <button class="chip" data-liters="4700">4,700L (람보르기니 1대분)</button>
+          <button class="chip active" data-liters="4820">4,820L (1위 김지훈 원장)</button>
+          <button class="chip" data-liters="7100">7,100L (사이버트럭 1대분)</button>
+          <button class="chip" data-liters="15000">15,000L (자유의 여신상)</button>
         </div>
       </div>
 
@@ -182,7 +203,7 @@
             <th>총 누적 흡입량</th>
             <th>1인 평균 / 순수지방률</th>
             <th>공인 검증 상태</th>
-            <th style="width: 140px;">3D 비커 연동</th>
+            <th style="width: 150px;">3D 체급 연동</th>
           </tr>
         </thead>
         <tbody id="doctors-table-body">
@@ -196,7 +217,7 @@
   <!-- 4. Modal: 내 랭크 등록하기 -->
   <div id="register-modal" class="modal-overlay">
     <div class="modal-box">
-      <button id="modal-close" class="modal-close-btn">
+      <button id="modal-close" class="modal-close-btn" title="닫기">
         <i data-lucide="x"></i>
       </button>
       <h3 style="font-size: 18px; font-weight: 900; margin-bottom: 6px;">전문의 랭크 공인 등록 신청</h3>
