@@ -43,7 +43,7 @@ export const COMPARISON_OBJECTS = [
     subText: '공업용 스틸 오일 배럴',
     volumeLiters: 200,
     volumeMlText: '200L',
-    modelPath: './assets/models/new_thin_barrel.glb',
+    modelPath: './assets/models/drum-new.glb',
     targetHeight: 0.88,
     position: [-19.0, 0, 0.0],
     rotation: [0, 0.2, 0],
