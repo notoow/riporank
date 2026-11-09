@@ -1,17 +1,18 @@
 /**
  * LipoRank High-Fidelity 3D Scene
- * Strictly Ordered Volumetric Lineup:
- * [Fiji Water] -- [Lamborghini] -- [★ SAMPLE Official Tower (Always Present)] -- [Cybertruck] -- [Statue of Liberty] -- [Olympic Pool (Rightmost)]
+ * Calibrated 1:1 Real-World Physical Scale (1 unit = 1 meter):
+ * [Fiji 0.22m] -- [Barrel 0.88m] -- [Lamborghini 1.16m] -- [★ SAMPLE Official Tower 4.82m] -- [Cow 1.45m] -- [Human 1.75m] -- [Cybertruck 1.79m (Gleaming Metallic)] -- [Thinker 1.8m] -- [T-Rex 3.8m] -- [Statue of Liberty & Pool: Smart Culling]
  * Features:
- * 1. Default all models in solid original textures (Lamborghini not always crystal)
- * 2. Crossfade/smooth transition to Crystal Glass on click, clean revert on switching
- * 3. SAMPLE Official 1m³ Cube Tower (4,820L / 4.82m) is permanent on stage
- * 4. Immersive First-Person Walk-in mode with WASD (move), QE (elevation), and mouse look-around
- * 5. Sunset Golden Hour mode toggle
+ * 1. "내 수술량 조절" spawns a highlighted preview tower in front stage (z = 1.6) with glowing aura
+ * 2. On "내 탑 등록하기", smooth animated slide transition into the exact height-ranked lineup slot
+ * 3. Cybertruck material upgraded to gleaming stainless steel metallic silver
+ * 4. Smart Visibility: Giant landmarks auto-toggle only when comparable volume/focus
+ * 5. 2.8s fluid fill & WASD/QE Walk-in mode
  */
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
 import { GLTFLoader } from './vendor/loaders/GLTFLoader.js';
+import { RoomEnvironment } from './vendor/RoomEnvironment.js';
 import { COMPARISON_OBJECTS } from './objects-data.js';
 
 export class LipoRankScene {
@@ -22,14 +23,14 @@ export class LipoRankScene {
     this.onCameraModeChange = options.onCameraModeChange || (() => {});
 
     this.selectedLiters = options.initialLiters || 4820; // 4,820L (SAMPLE 원장)
-    this.activeObjectId = null; // No object is crystal by default!
+    this.activeObjectId = null;
     this.objectConfigs = COMPARISON_OBJECTS;
 
     // Camera Modes: 'overview', 'giant', 'walkin'
     this.cameraMode = 'overview';
     this.isSunsetMode = false;
 
-    // 2.8s Golden Time Fluid Fill
+    // Fill Animation parameters (2.8s Golden Time)
     this.fillDuration = 2.8;
     this.fillStartTime = 0;
     this.isFilling = false;
@@ -37,17 +38,17 @@ export class LipoRankScene {
     this.targetFillPct = 1.0;
     this.currentFillPct = 1.0;
 
-    // Smooth Camera Transition
+    // Camera transition
     this.isTransitioningCamera = false;
     this.camStartPos = new THREE.Vector3();
-    this.camTargetPos = new THREE.Vector3(0, 0.58, 8.4);
+    this.camTargetPos = new THREE.Vector3(-3.0, 2.5, 16.0);
     this.lookAtStart = new THREE.Vector3();
-    this.lookAtTarget = new THREE.Vector3(0, 0.58, 0);
+    this.lookAtTarget = new THREE.Vector3(0, 0.9, 0);
     this.camTransitionProgress = 1.0;
 
     // First-Person Walk-in Controls (WASD + QE + Mouse Look)
     this.keys = { w: false, a: false, s: false, d: false, q: false, e: false };
-    this.moveSpeed = 3.6; // m/s
+    this.moveSpeed = 4.2;
     this.isMouseDown = false;
     this.prevMousePos = { x: 0, y: 0 };
     this.cameraEuler = new THREE.Euler(0, 0, 0, 'YXZ');
@@ -60,17 +61,30 @@ export class LipoRankScene {
     this.clipPlanes = {};
     this.worldBounds = {};
 
-    // Cube Towers (Official SAMPLE tower is permanent)
-    this.cubeTowerGroup = new THREE.Group();
-    this.privateTowerGroup = new THREE.Group();
+    // 1m³ Cube Towers:
+    // 1. officialTowerGroup: SAMPLE 원장 공인 탑 (람보르기니 바로 오른쪽 x = -1.2에 상시 배치)
+    // 2. previewTowerGroup: 슬라이더 조절 시 앞쪽 중앙(z = 1.6)에 멋진 오라와 함께 뜨는 프리뷰 탑
+    // 3. registeredMyTowerGroup: "내 탑 등록하기" 완료 시 라인업으로 슬라이드 이동한 내 영구 탑
+    this.officialTowerGroup = new THREE.Group();
+    this.previewTowerGroup = new THREE.Group();
+    this.registeredMyTowerGroup = new THREE.Group();
+
+    // Tower Sliding Animation
+    this.isSlidingMyTower = false;
+    this.slideStartPos = new THREE.Vector3(0, 0, 1.6);
+    this.slideTargetPos = new THREE.Vector3(1.4, 0, 0.0);
+    this.slideProgress = 1.0;
 
     this.init();
     this.initLights();
     this.initStudioFloor();
     this.initMaterials();
+    this.initPreviewAura();
     this.loadAllObjects();
-    // Build permanent official SAMPLE doctor tower (4,820L)
-    this.buildCubeTower(this.selectedLiters, false);
+
+    // Permanent Official SAMPLE Tower (4,820L / 4.82m) — right of lamborghini (x=-13)
+    this.buildTowerMesh(this.officialTowerGroup, 4820, -8.5, 0.0, false, 'SAMPLE 원장 (공인 1위 / 4,820L)');
+
     this.initControls();
     this.initEvents();
     this.animate();
@@ -81,14 +95,15 @@ export class LipoRankScene {
     this.studioBgColor = new THREE.Color(0xfcfdfe);
     this.sunsetBgColor = new THREE.Color(0xffedd5);
     this.scene.background = this.studioBgColor.clone();
-    this.scene.fog = new THREE.FogExp2(0xfcfdfe, 0.012);
+    this.scene.fog = new THREE.FogExp2(0xfcfdfe, 0.006); // Reduced density for wide lineup
 
     const width = this.container.clientWidth || window.innerWidth;
     const height = this.container.clientHeight || window.innerHeight;
 
-    this.camera = new THREE.PerspectiveCamera(26, width / height, 0.1, 140);
-    this.camera.position.set(0, 0.58, 8.4);
-    this.camera.lookAt(0, 0.58, 0);
+    // Eye-level camera: centered on the core lineup, far enough to see all small-mid objects
+    this.camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 300);
+    this.camera.position.set(-3.0, 2.5, 16.0);
+    this.camera.lookAt(-3.0, 1.0, 0);
 
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -101,39 +116,41 @@ export class LipoRankScene {
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.localClippingEnabled = true;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.15;
+    this.renderer.toneMappingExposure = 1.18;
 
     this.container.appendChild(this.renderer.domElement);
     this.clock = new THREE.Clock();
 
-    this.scene.add(this.cubeTowerGroup);
-    this.scene.add(this.privateTowerGroup);
+    this.scene.add(this.officialTowerGroup);
+    this.scene.add(this.previewTowerGroup);
+    this.scene.add(this.registeredMyTowerGroup);
   }
 
   initLights() {
-    this.hemiLight = new THREE.HemisphereLight(0xffffff, 0xf1f5f9, 2.0);
+    this.hemiLight = new THREE.HemisphereLight(0xffffff, 0xf1f5f9, 2.2);
     this.scene.add(this.hemiLight);
 
-    this.mainLight = new THREE.DirectionalLight(0xffffff, 2.5);
-    this.mainLight.position.set(7, 14, 9);
+    this.mainLight = new THREE.DirectionalLight(0xffffff, 2.6);
+    this.mainLight.position.set(8, 16, 10);
     this.mainLight.castShadow = true;
     this.mainLight.shadow.mapSize.width = 2048;
     this.mainLight.shadow.mapSize.height = 2048;
     this.mainLight.shadow.camera.near = 0.5;
-    this.mainLight.shadow.camera.far = 40;
-    this.mainLight.shadow.camera.left = -14;
-    this.mainLight.shadow.camera.right = 14;
-    this.mainLight.shadow.camera.top = 10;
+    this.mainLight.shadow.camera.far = 45;
+    this.mainLight.shadow.camera.left = -16;
+    this.mainLight.shadow.camera.right = 16;
+    this.mainLight.shadow.camera.top = 12;
     this.mainLight.shadow.camera.bottom = -4;
     this.mainLight.shadow.bias = -0.0001;
     this.scene.add(this.mainLight);
 
-    this.fillLight = new THREE.DirectionalLight(0xf1f5f9, 1.3);
-    this.fillLight.position.set(-8, 7, 5);
+    this.fillLight = new THREE.DirectionalLight(0xf1f5f9, 1.4);
+    this.fillLight.position.set(-10, 8, 6);
     this.scene.add(this.fillLight);
 
+    // Warm golden accent light
     this.fatGlow = new THREE.PointLight(0xf59e0b, 1.8, 8);
-    this.fatGlow.position.set(-1.0, 1.2, -0.8);
+    this.fatGlow.position.set(-1.2, 1.5, -0.6);
     this.scene.add(this.fatGlow);
 
     this.sunsetRimLight = new THREE.DirectionalLight(0xf97316, 0.0);
@@ -142,7 +159,7 @@ export class LipoRankScene {
   }
 
   initStudioFloor() {
-    const floorGeo = new THREE.PlaneGeometry(100, 100);
+    const floorGeo = new THREE.PlaneGeometry(120, 120);
     const floorMat = new THREE.ShadowMaterial({ opacity: 0.12 });
     this.shadowFloor = new THREE.Mesh(floorGeo, floorMat);
     this.shadowFloor.rotation.x = -Math.PI / 2;
@@ -157,6 +174,7 @@ export class LipoRankScene {
   }
 
   initMaterials() {
+    // Crystal Glass Material
     this.glassMaterial = new THREE.MeshPhysicalMaterial({
       color: new THREE.Color(0xffffff),
       metalness: 0.05,
@@ -172,21 +190,70 @@ export class LipoRankScene {
       side: THREE.DoubleSide
     });
 
-    // 1m³ Glass Cube Shell Material
+    // 1m³ Glass Cube Shell Material (1.0m x 1.0m x 1.0m = 1,000L)
+    // Use simple transparent material (transmission requires WebGL2 extra passes)
     this.cubeGlassMaterial = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(0xffffff),
-      metalness: 0.05,
-      roughness: 0.06,
-      transmission: 0.96,
-      thickness: 0.6,
-      ior: 1.52,
+      color: new THREE.Color(0xe8f4ff),
+      metalness: 0.0,
+      roughness: 0.05,
       transparent: true,
-      opacity: 0.40,
-      reflectivity: 0.95,
+      opacity: 0.18,
+      reflectivity: 0.9,
       clearcoat: 1.0,
       clearcoatRoughness: 0.04,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
+      depthWrite: false
     });
+    // Gleaming Stainless Steel for Cybertruck
+    this.stainlessCybertruckMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(0xc0ccd8),
+      metalness: 0.88,
+      roughness: 0.18,
+      envMapIntensity: 1.2
+    });
+
+    // Build a simple cube envmap to give metallic surfaces reflections
+    const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
+    // Create a simple sky-like scene for envmap
+    const envScene = new RoomEnvironment();
+    this.envMap = pmremGenerator.fromScene(envScene).texture;
+    this.scene.environment = this.envMap;
+    pmremGenerator.dispose();
+  }
+
+  /**
+   * Glowing Highlight Aura ring for Preview Tower (front stage)
+   */
+  initPreviewAura() {
+    this.auraGroup = new THREE.Group();
+    this.auraGroup.position.set(0, 0.01, 1.6);
+    this.auraGroup.visible = false;
+
+    // Glowing circle ring
+    const ringGeo = new THREE.RingGeometry(0.55, 0.75, 48);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0x0953ff,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.7
+    });
+    this.auraRing = new THREE.Mesh(ringGeo, ringMat);
+    this.auraRing.rotation.x = -Math.PI / 2;
+    this.auraGroup.add(this.auraRing);
+
+    // Inner bright halo
+    const haloGeo = new THREE.RingGeometry(0.3, 0.52, 48);
+    const haloMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.4
+    });
+    this.auraHalo = new THREE.Mesh(haloGeo, haloMat);
+    this.auraHalo.rotation.x = -Math.PI / 2;
+    this.auraGroup.add(this.auraHalo);
+
+    this.scene.add(this.auraGroup);
   }
 
   loadAllObjects() {
@@ -199,6 +266,26 @@ export class LipoRankScene {
         gltf => {
           const root = gltf.scene;
           this.models[cfg.id] = root;
+
+          // Upgrade Cybertruck material to gleaming metallic silver
+          if (cfg.id === 'cybertruck') {
+            const tiresMat = new THREE.MeshStandardMaterial({
+              color: new THREE.Color(0x1a1a1a),
+              roughness: 0.85,
+              metalness: 0.05
+            });
+            root.traverse(c => {
+              if (c.isMesh) {
+                const n = c.name.toLowerCase();
+                if (n.includes('cylinder')) {
+                  // Cylinders are wheels/tires
+                  c.material = tiresMat;
+                } else {
+                  c.material = this.stainlessCybertruckMaterial;
+                }
+              }
+            });
+          }
 
           // Cache original materials
           root.traverse(c => {
@@ -213,10 +300,9 @@ export class LipoRankScene {
           holder.name = cfg.id;
           holder.userData = { config: cfg };
 
-          // 1. Outer Shell (solid default)
           holder.add(root);
 
-          // 2. Inner Fat Mesh (hidden by default)
+          // Inner Fat Mesh (hidden by default)
           const fatMesh = root.clone();
           const clipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 100);
           this.clipPlanes[cfg.id] = clipPlane;
@@ -247,25 +333,32 @@ export class LipoRankScene {
             holder.rotation.set(cfg.rotation[0], cfg.rotation[1], cfg.rotation[2]);
           }
 
-          const box = new THREE.Box3().setFromObject(holder);
-          const size = box.getSize(new THREE.Vector3());
+          // 1:1 Physical Scale Normalization
+          // Step 1: measure at position=0 to get clean local bounds
+          holder.position.set(0, 0, 0);
+          const box0 = new THREE.Box3().setFromObject(holder);
+          const size0 = box0.getSize(new THREE.Vector3());
 
           let scale = 1.0;
           if (cfg.targetHeight) {
-            scale = cfg.targetHeight / (size.y || 1);
-          } else if (cfg.targetWidth) {
-            scale = cfg.targetWidth / (size.x || 1);
+            scale = cfg.targetHeight / (size0.y || 1);
           } else if (cfg.targetLength) {
-            scale = cfg.targetLength / (Math.max(size.x, size.z) || 1);
+            scale = cfg.targetLength / (Math.max(size0.x, size0.z) || 1);
           }
           holder.scale.setScalar(scale);
 
-          box.setFromObject(holder);
+          // Step 2: re-measure after scale to get final ground offset
+          const box1 = new THREE.Box3().setFromObject(holder);
           holder.position.set(
             cfg.position[0],
-            -box.min.y,
+            -box1.min.y, // lift so bottom of object is exactly at y = 0
             cfg.position[2]
           );
+
+          // Smart Visibility Culling: Giant landmarks hidden by default until volume threshold met
+          if (cfg.hasOwnProperty('isAlwaysVisible') && !cfg.isAlwaysVisible) {
+            holder.visible = false;
+          }
 
           this.lineupGroup.add(holder);
           this.modelHolders[cfg.id] = holder;
@@ -285,11 +378,15 @@ export class LipoRankScene {
   }
 
   /**
-   * Builds the 1m³ Glass Cube Tower
-   * Permanent Official Tower is placed right next to Lamborghini at x = -1.0m
+   * Builds a 1m³ Glass Cube Tower
+   * @param {THREE.Group} group
+   * @param {number} liters
+   * @param {number} posX
+   * @param {number} posZ
+   * @param {boolean} isPrivate
+   * @param {string} badgeLabel
    */
-  buildCubeTower(liters, isPrivate = false) {
-    const group = isPrivate ? this.privateTowerGroup : this.cubeTowerGroup;
+  buildTowerMesh(group, liters, posX, posZ, isPrivate, badgeLabel) {
     while (group.children.length > 0) {
       group.remove(group.children[0]);
     }
@@ -299,12 +396,12 @@ export class LipoRankScene {
     const partialRatio = remainderLiters / 1000;
     const totalCubes = remainderLiters > 0 ? fullCubes + 1 : fullCubes;
 
-    const cubeSize = 0.44;
+    // 1m³ cube: each cube is exactly 1.0 x 1.0 x 1.0 meters = 1,000L
+    const cubeSize = 1.0;
     const gap = 0.02;
     const stepY = cubeSize + gap;
-    // Positioned immediately to the right of Lamborghini (x = -2.3m -> Tower at x = -1.0m)
-    const posX = isPrivate ? 1.8 : -1.0;
-    const posZ = 0.05;
+
+    group.position.set(posX, 0, posZ);
 
     for (let i = 0; i < totalCubes; i++) {
       const isTopPartial = (i === fullCubes && partialRatio > 0);
@@ -312,51 +409,54 @@ export class LipoRankScene {
       const cubeY = (i * stepY) + (cubeSize / 2);
 
       const cubeHolder = new THREE.Group();
-      cubeHolder.position.set(posX, cubeY, posZ);
+      cubeHolder.position.set(0, cubeY, 0);
 
-      // Crystal Glass Outer Shell
+      // Crystal Glass Outer Shell — subtle ghost-blue tint, very transparent
       const boxGeo = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
       const glassMesh = new THREE.Mesh(boxGeo, this.cubeGlassMaterial);
-      glassMesh.castShadow = true;
-      glassMesh.receiveShadow = true;
+      glassMesh.castShadow = false;
+      glassMesh.receiveShadow = false;
+      glassMesh.renderOrder = 1; // Render glass after solid objects
       cubeHolder.add(glassMesh);
 
-      // Edge wireframe
+      // Glowing edge wireframe (most visible part of the cube)
       const wireGeo = new THREE.EdgesGeometry(boxGeo);
       const wireMat = new THREE.LineBasicMaterial({
-        color: isPrivate ? 0x60a5fa : 0xfde68a,
+        color: isPrivate ? 0x38bdf8 : 0xfde68a,
         transparent: true,
-        opacity: 0.85
+        opacity: 0.90
       });
       const wireLine = new THREE.LineSegments(wireGeo, wireMat);
       cubeHolder.add(wireLine);
 
-      // Inner Golden Fat Core
+      // Inner Golden Fat Core — translucent so glass outline is visible
       const fatHeight = Math.max(0.02, (cubeSize * 0.94) * fillPct);
-      const fatGeo = new THREE.BoxGeometry(cubeSize * 0.92, fatHeight, cubeSize * 0.92);
+      const fatGeo = new THREE.BoxGeometry(cubeSize * 0.90, fatHeight, cubeSize * 0.90);
       const fatMat = new THREE.MeshStandardMaterial({
         color: isPrivate ? 0x38bdf8 : 0xf59e0b,
-        emissive: isPrivate ? 0x0284c7 : 0xb45309,
-        emissiveIntensity: 0.48,
-        roughness: 0.22,
-        metalness: 0.08
+        emissive: isPrivate ? 0x0369a1 : 0xd97706,
+        emissiveIntensity: 0.5,
+        roughness: 0.25,
+        metalness: 0.1,
+        transparent: true,
+        opacity: 0.88
       });
       const fatMesh = new THREE.Mesh(fatGeo, fatMat);
-      fatMesh.position.y = - (cubeSize * 0.94 / 2) + (fatHeight / 2);
+      fatMesh.position.y = -(cubeSize * 0.94 / 2) + (fatHeight / 2);
       cubeHolder.add(fatMesh);
 
       group.add(cubeHolder);
     }
 
     const topHeight = (totalCubes * stepY);
-    this.createTowerTopMarker(group, posX, topHeight, liters, isPrivate);
+    this.createTowerTopMarker(group, topHeight, liters, isPrivate);
   }
 
-  createTowerTopMarker(group, posX, topHeight, liters, isPrivate) {
+  createTowerTopMarker(group, topHeight, liters, isPrivate) {
     const markerGroup = new THREE.Group();
-    markerGroup.position.set(posX, topHeight + 0.12, 0.05);
+    markerGroup.position.set(0, topHeight + 0.16, 0);
 
-    const pinGeo = new THREE.OctahedronGeometry(0.08, 0);
+    const pinGeo = new THREE.OctahedronGeometry(0.12, 0);
     const pinMat = new THREE.MeshStandardMaterial({
       color: isPrivate ? 0x38bdf8 : 0xf59e0b,
       emissive: isPrivate ? 0x0284c7 : 0xd97706,
@@ -371,8 +471,60 @@ export class LipoRankScene {
   }
 
   /**
-   * Set Active Object: cleanly transitions previous object back to solid,
-   * and turns target object into crystal glass with 2.8s golden fluid fill.
+   * "내 수술량 조절": Spawns the preview tower in front stage (z = 1.6) with glowing aura
+   */
+  setVolume(liters) {
+    this.selectedLiters = liters;
+
+    // Show Preview Tower with glowing aura in front of lineup
+    this.buildTowerMesh(this.previewTowerGroup, liters, 0, 1.6, true, '내 조절 탑');
+    this.auraGroup.visible = true;
+
+    // Check smart visibility for giant landmarks (statue of liberty, pool)
+    this.updateSmartLandmarkVisibility(liters);
+
+    // If an object is active, update its fill level
+    if (this.activeObjectId) {
+      this.applyGlassFill(this.activeObjectId, liters);
+    }
+
+    this.onVolumeChange(liters);
+  }
+
+  updateSmartLandmarkVisibility(liters) {
+    this.objectConfigs.forEach(cfg => {
+      if (cfg.minLitersThreshold && this.modelHolders[cfg.id]) {
+        // Toggle on when volume is large enough
+        this.modelHolders[cfg.id].visible = (liters >= cfg.minLitersThreshold);
+      }
+    });
+  }
+
+  /**
+   * "내 탑 등록하기" 완료 시:
+   * Smoothly slides the front preview tower to its height-ranked slot in lineup!
+   */
+  confirmAndRegisterMyTower(doctorData) {
+    const liters = doctorData.totalLiters;
+    
+    // Determine height-ranked X position (placed between cow and cybertruck at x = 1.4m)
+    const targetX = 1.4;
+    const targetZ = 0.0;
+
+    // Build the registered tower in preview position first
+    this.buildTowerMesh(this.registeredMyTowerGroup, liters, 0, 1.6, true, `${doctorData.name} 탑`);
+    this.previewTowerGroup.visible = false;
+    this.auraGroup.visible = false;
+
+    // Trigger smooth slide transition
+    this.isSlidingMyTower = true;
+    this.slideProgress = 0.0;
+    this.slideStartPos.set(0, 0, 1.6);
+    this.slideTargetPos.set(targetX, 0, targetZ);
+  }
+
+  /**
+   * Smoothly transitions active object to crystal glass
    */
   setActiveObject(objectId) {
     if (this.activeObjectId && this.activeObjectId !== objectId) {
@@ -381,6 +533,10 @@ export class LipoRankScene {
 
     this.activeObjectId = objectId;
     if (objectId) {
+      // Ensure object is visible even if giant landmark
+      if (this.modelHolders[objectId]) {
+        this.modelHolders[objectId].visible = true;
+      }
       this.applyGlassFill(objectId, this.selectedLiters);
     }
     this.onObjectChange(objectId);
@@ -393,17 +549,14 @@ export class LipoRankScene {
 
     if (!root || !fatMesh || !cfg) return;
 
-    // Convert outer shell meshes to transparent crystal glass
     root.traverse(c => {
       if (c.isMesh) {
         c.material = this.glassMaterial;
       }
     });
 
-    // Reveal inner fat
     fatMesh.visible = true;
 
-    // Trigger 2.8s smooth fluid rising
     const ratio = liters / cfg.volumeLiters;
     this.targetFillPct = Math.min(Math.max(ratio, 0.05), 1.0);
     this.startFillPct = 0.05;
@@ -411,7 +564,7 @@ export class LipoRankScene {
     this.isFilling = true;
 
     if (this.fatGlow) {
-      this.fatGlow.position.set(cfg.position[0], 0.7, cfg.position[2] - 0.8);
+      this.fatGlow.position.set(cfg.position[0], 0.8, cfg.position[2] - 0.8);
     }
   }
 
@@ -421,7 +574,6 @@ export class LipoRankScene {
 
     if (!root) return;
 
-    // Smoothly restore original solid materials
     root.traverse(c => {
       if (c.isMesh && this.originalMaterials.has(c)) {
         c.material = this.originalMaterials.get(c);
@@ -433,21 +585,6 @@ export class LipoRankScene {
     }
   }
 
-  setVolume(liters) {
-    this.selectedLiters = liters;
-    // Rebuild SAMPLE official tower with new volume
-    this.buildCubeTower(liters, false);
-
-    if (this.activeObjectId) {
-      this.applyGlassFill(this.activeObjectId, liters);
-    }
-
-    this.onVolumeChange(liters);
-  }
-
-  /**
-   * Giant Hero View
-   */
   enterGiantView(objectId) {
     const cfg = this.objectConfigs.find(c => c.id === objectId);
     if (!cfg || !cfg.heroCamPos) return;
@@ -466,23 +603,19 @@ export class LipoRankScene {
   exitGiantView() {
     this.cameraMode = 'overview';
     this.startCameraTransition(
-      new THREE.Vector3(0, 0.58, 8.4),
-      new THREE.Vector3(0, 0.58, 0)
+      new THREE.Vector3(-3.0, 2.5, 16.0),
+      new THREE.Vector3(-3.0, 1.0, 0)
     );
     this.onCameraModeChange('overview', null);
   }
 
-  /**
-   * First-Person Walk-in Mode (admerest style WASD + QE exploration)
-   */
   enterFirstPersonMode() {
     this.cameraMode = 'walkin';
-    this.controls.enabled = false; // Disable OrbitControls during walk-in
+    this.controls.enabled = false;
 
-    // Start near floor level at eye-height (y = 1.3m, z = 3.2m)
     this.startCameraTransition(
-      new THREE.Vector3(0, 1.3, 3.2),
-      new THREE.Vector3(0, 1.2, 0)
+      new THREE.Vector3(0, 1.35, 3.8),
+      new THREE.Vector3(0, 1.25, 0)
     );
 
     this.cameraEuler.set(0, 0, 0, 'YXZ');
@@ -523,7 +656,7 @@ export class LipoRankScene {
       this.hemiLight.color.set(0xffffff);
       this.hemiLight.groundColor.set(0xf1f5f9);
       this.mainLight.color.set(0xffffff);
-      this.mainLight.intensity = 2.5;
+      this.mainLight.intensity = 2.6;
       this.sunsetRimLight.intensity = 0.0;
       this.fatGlow.intensity = 1.8;
     }
@@ -535,37 +668,29 @@ export class LipoRankScene {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
-    this.controls.minDistance = 1.0;
-    this.controls.maxDistance = 18.0;
+    this.controls.minDistance = 1.5;
+    this.controls.maxDistance = 80.0;
     this.controls.maxPolarAngle = Math.PI / 2 - 0.01;
-    this.controls.minPolarAngle = Math.PI / 2.25;
-    this.controls.target.set(0, 0.58, 0);
+    this.controls.minPolarAngle = Math.PI / 2.3;
+    this.controls.target.set(-3.0, 1.0, 0);
   }
 
   initEvents() {
     window.addEventListener('resize', () => this.onWindowResize());
 
-    // WASD & QE Keyboard navigation in Walk-in mode
     window.addEventListener('keydown', e => {
       const k = e.key.toLowerCase();
-      if (this.keys.hasOwnProperty(k)) {
-        this.keys[k] = true;
-      }
-      if (e.key === 'Escape') {
-        if (this.cameraMode !== 'overview') {
-          this.exitFirstPersonMode();
-        }
+      if (this.keys.hasOwnProperty(k)) this.keys[k] = true;
+      if (e.key === 'Escape' && this.cameraMode !== 'overview') {
+        this.exitFirstPersonMode();
       }
     });
 
     window.addEventListener('keyup', e => {
       const k = e.key.toLowerCase();
-      if (this.keys.hasOwnProperty(k)) {
-        this.keys[k] = false;
-      }
+      if (this.keys.hasOwnProperty(k)) this.keys[k] = false;
     });
 
-    // Mouse Drag Look-around in Walk-in mode
     this.container.addEventListener('mousedown', e => {
       this.isMouseDown = true;
       this.prevMousePos.x = e.clientX;
@@ -585,12 +710,10 @@ export class LipoRankScene {
 
       this.cameraEuler.y -= deltaX * 0.003;
       this.cameraEuler.x -= deltaY * 0.003;
-      // Clamp vertical pitch [-80 deg, 80 deg]
       this.cameraEuler.x = Math.max(-1.4, Math.min(1.4, this.cameraEuler.x));
       this.camera.quaternion.setFromEuler(this.cameraEuler);
     });
 
-    // Click 3D models to trigger Giant View & Crystal Fill
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
@@ -627,7 +750,7 @@ export class LipoRankScene {
 
     const moveVector = new THREE.Vector3();
     const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion);
-    forward.y = 0; // lock to horizontal plane
+    forward.y = 0;
     forward.normalize();
 
     const right = new THREE.Vector3(1, 0, 0).applyQuaternion(this.camera.quaternion);
@@ -644,15 +767,9 @@ export class LipoRankScene {
       this.camera.position.add(moveVector);
     }
 
-    // Height control via Q (down) / E (up)
-    if (this.keys.e) {
-      this.camera.position.y += this.moveSpeed * delta * 0.8;
-    }
-    if (this.keys.q) {
-      this.camera.position.y -= this.moveSpeed * delta * 0.8;
-    }
-    // Floor boundary constraint
-    this.camera.position.y = Math.max(0.4, Math.min(16.0, this.camera.position.y));
+    if (this.keys.e) this.camera.position.y += this.moveSpeed * delta * 0.8;
+    if (this.keys.q) this.camera.position.y -= this.moveSpeed * delta * 0.8;
+    this.camera.position.y = Math.max(0.4, Math.min(18.0, this.camera.position.y));
   }
 
   animate() {
@@ -661,7 +778,7 @@ export class LipoRankScene {
     const delta = this.clock.getDelta();
     const time = this.clock.getElapsedTime();
 
-    // 1. First-Person Walk-in movement
+    // 1. Walk-in movement
     this.updateWalkinMovement(delta);
 
     // 2. Camera Transition
@@ -680,7 +797,26 @@ export class LipoRankScene {
       }
     }
 
-    // 3. 2.8s Fluid Fill Animation (Cubic Ease-Out)
+    // 3. Slide Transition for Registered Tower
+    if (this.isSlidingMyTower) {
+      this.slideProgress += delta * 1.5;
+      const t = Math.min(this.slideProgress, 1.0);
+      const ease = t * t * (3 - 2 * t);
+      this.registeredMyTowerGroup.position.lerpVectors(this.slideStartPos, this.slideTargetPos, ease);
+      if (t >= 1.0) {
+        this.isSlidingMyTower = false;
+      }
+    }
+
+    // 4. Rotating Aura animation under preview tower
+    if (this.auraGroup && this.auraGroup.visible) {
+      this.auraRing.rotation.z += delta * 1.2;
+      this.auraHalo.rotation.z -= delta * 1.5;
+      const pulse = 1.0 + Math.sin(time * 4.0) * 0.08;
+      this.auraGroup.scale.set(pulse, pulse, pulse);
+    }
+
+    // 5. 2.8s Fluid Fill Animation (Cubic Ease-Out)
     if (this.isFilling && this.activeObjectId && this.clipPlanes[this.activeObjectId]) {
       const elapsed = time - this.fillStartTime;
       const progress = Math.min(elapsed / this.fillDuration, 1.0);

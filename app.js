@@ -1,7 +1,7 @@
 /**
  * LipoRank Main Application Controller
- * Handles SPA navigation tabs, 3D Scene events, Walk-in WASD controls,
- * 1m³ Cube Tower counts, and private pending application workflow
+ * Handles SPA navigation, Real-World Physical Scale 3D Scene,
+ * Front-Stage Preview Tower, Animated Slide Registration, and Audit Verification Flow
  */
 import { LipoRankScene } from './scene.js';
 import { getDoctors, getMyPendingTower, submitDoctorApplication } from './ranking-store.js';
@@ -19,7 +19,7 @@ class LipoRankApp {
     this.init3DScene();
     this.initUIEvents();
     this.renderLeaderboards();
-    this.renderMyPendingBanner();
+    this.renderMyRegisteredBanner();
     this.updateAllTexts(this.currentLiters, this.scene.activeObjectId);
     this.refreshIcons();
   }
@@ -39,7 +39,7 @@ class LipoRankApp {
     this.centerHighlightRatio = document.getElementById('center-highlight-ratio');
     this.presetChips = document.querySelectorAll('.chip');
     
-    // Bottom Register Button (under 3D Canvas)
+    // Bottom Register Button
     this.btnRegisterRankBottom = document.getElementById('btn-register-rank-bottom');
     this.registerModal = document.getElementById('register-modal');
     this.modalClose = document.getElementById('modal-close');
@@ -47,7 +47,7 @@ class LipoRankApp {
     this.homeDoctorsTableBody = document.getElementById('home-doctors-table-body');
     this.fullDoctorsTableBody = document.getElementById('full-doctors-table-body');
 
-    // Controls: Sunset, Giant View, Walk-in HUD
+    // Controls: Sunset, Walk-in HUD
     this.btnToggleSunset = document.getElementById('btn-toggle-sunset');
     this.sunsetBtnText = document.getElementById('sunset-btn-text');
     this.btnToggleGiant = document.getElementById('btn-toggle-giant');
@@ -68,17 +68,18 @@ class LipoRankApp {
     this.fatWeightText = document.getElementById('fat-weight-text');
     this.fatCalText = document.getElementById('fat-cal-text');
 
-    // Carousel buttons & dots
+    // Carousel buttons & object tabs
     this.btnPrev = document.getElementById('carousel-prev');
     this.btnNext = document.getElementById('carousel-next');
-    this.dots = document.querySelectorAll('.carousel-dots .dot');
     this.objectTabs = document.querySelectorAll('.object-label-tab, .center-highlight-box');
 
-    // Pending Banner Elements
-    this.myPendingBannerHome = document.getElementById('my-pending-banner-home');
-    this.myPendingNameHome = document.getElementById('my-pending-name-home');
-    this.myPendingClinicHome = document.getElementById('my-pending-clinic-home');
-    this.myPendingLitersHome = document.getElementById('my-pending-liters-home');
+    // Registered Banner Elements & Verify CTA
+    this.myRegisteredBanner = document.getElementById('my-registered-banner');
+    this.myRegisteredName = document.getElementById('my-registered-name');
+    this.myRegisteredClinic = document.getElementById('my-registered-clinic');
+    this.myRegisteredLiters = document.getElementById('my-registered-liters');
+    this.btnRequestVerify = document.getElementById('btn-request-verify');
+    this.auditStatusTag = document.getElementById('audit-status-tag');
   }
 
   initNavigation() {
@@ -86,12 +87,10 @@ class LipoRankApp {
     this.tabViews = document.querySelectorAll('.tab-view');
 
     const switchTab = (targetId) => {
-      // Update nav link states
       document.querySelectorAll('.header-nav .nav-link').forEach(link => {
         link.classList.toggle('active', link.dataset.nav === targetId);
       });
 
-      // Switch views
       this.tabViews.forEach(view => {
         view.classList.toggle('active', view.id === `view-${targetId}`);
       });
@@ -99,7 +98,6 @@ class LipoRankApp {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       this.refreshIcons();
 
-      // Trigger 3D canvas resize when switching back to home
       if (targetId === 'home' && this.scene) {
         setTimeout(() => this.scene.onWindowResize(), 50);
       }
@@ -116,7 +114,6 @@ class LipoRankApp {
       });
     });
 
-    // Handle hash on page load
     window.addEventListener('hashchange', () => {
       const hash = window.location.hash.replace('#', '') || 'home';
       switchTab(hash);
@@ -133,7 +130,7 @@ class LipoRankApp {
         this.updateAllTexts(liters, this.scene.activeObjectId);
       },
       onObjectChange: objectId => {
-        this.updateObjectTabsAndDots(objectId);
+        this.updateObjectTabs(objectId);
         this.updateAllTexts(this.currentLiters, objectId);
         if (this.scene.cameraMode === 'giant') {
           this.updateGiantCard(objectId);
@@ -144,13 +141,14 @@ class LipoRankApp {
       }
     });
 
+    // If user already registered a tower previously, place it in the lineup
     if (this.myPendingTower) {
-      this.scene.buildCubeTower(this.myPendingTower.totalLiters, true);
+      this.scene.confirmAndRegisterMyTower(this.myPendingTower);
     }
   }
 
   initUIEvents() {
-    // 1. Slider change (Volume & 1m³ Cube Tower)
+    // 1. Slider change (Volume & Spawns Front-Stage Preview Tower)
     if (this.volSlider) {
       this.volSlider.addEventListener('input', e => {
         const liters = Number(e.target.value);
@@ -197,7 +195,7 @@ class LipoRankApp {
       });
     }
 
-    // 4. Object Tab Clicks (In overview mode: select object; or enter giant view)
+    // 4. Object Tab Clicks
     this.objectTabs.forEach(tab => {
       tab.addEventListener('click', () => {
         const objId = tab.dataset.objectId;
@@ -211,22 +209,7 @@ class LipoRankApp {
       });
     });
 
-    // 5. Dots Click
-    this.dots.forEach(dot => {
-      dot.addEventListener('click', () => {
-        const idx = Number(dot.dataset.index);
-        if (COMPARISON_OBJECTS[idx]) {
-          const targetId = COMPARISON_OBJECTS[idx].id;
-          if (this.scene.cameraMode === 'giant') {
-            this.scene.enterGiantView(targetId);
-          } else {
-            this.scene.setActiveObject(targetId);
-          }
-        }
-      });
-    });
-
-    // 6. Sunset Golden Hour Toggle
+    // 5. Sunset Mode Toggle
     if (this.btnToggleSunset) {
       this.btnToggleSunset.addEventListener('click', () => {
         const isSunset = this.scene.toggleSunsetMode();
@@ -238,7 +221,7 @@ class LipoRankApp {
       });
     }
 
-    // 7. 3D Walk-in Direct Enter / Exit Buttons (WASD mode)
+    // 6. 3D Walk-in Direct Enter / Exit Buttons
     if (this.btnToggleGiant) {
       this.btnToggleGiant.addEventListener('click', () => {
         if (this.scene.cameraMode === 'walkin') {
@@ -261,7 +244,7 @@ class LipoRankApp {
       });
     }
 
-    // 8. Register Rank Modal (Bottom Button triggers modal with current slider value prefilled)
+    // 7. Register Rank Modal (Bottom Button)
     const openModal = () => {
       if (this.registerModal) {
         const litersInput = document.getElementById('reg-liters');
@@ -286,7 +269,7 @@ class LipoRankApp {
       });
     }
 
-    // Form submit: Create Private Pending Tower
+    // Form submit: Animate and slide tower into lineup!
     if (this.registerForm) {
       this.registerForm.addEventListener('submit', e => {
         e.preventDefault();
@@ -294,22 +277,35 @@ class LipoRankApp {
           name: document.getElementById('reg-name').value,
           licenseNo: document.getElementById('reg-license').value,
           clinic: document.getElementById('reg-clinic').value,
-          liters: document.getElementById('reg-liters').value,
-          cases: document.getElementById('reg-cases').value,
+          liters: Number(document.getElementById('reg-liters').value),
+          cases: Number(document.getElementById('reg-cases').value),
           crmSystem: document.getElementById('reg-crm').value,
           contact: document.getElementById('reg-contact').value
         };
 
-        const pending = submitDoctorApplication(formData);
-        this.myPendingTower = pending;
-        this.renderMyPendingBanner();
+        const registered = submitDoctorApplication(formData);
+        this.myPendingTower = registered;
 
-        // Build private tower immediately on stage!
-        this.scene.buildCubeTower(pending.totalLiters, true);
+        // Slide the preview tower into its exact position in 3D lineup!
+        this.scene.confirmAndRegisterMyTower(registered);
+        this.renderMyRegisteredBanner();
 
-        alert(`[${formData.name}] 원장님의 공인 랭크 등록 신청이 정상 접수되었습니다!\n\n관리자 심사 완료 전까지 원장님 브라우저에서 [공인 심사 진행중 (나만 보기 모드)]로 원장님만의 3D 큐브 탑을 감상하실 수 있습니다.`);
+        alert(`[${formData.name}] 원장님의 3D 탑이 생성되어 라인업 위치로 성공적으로 등록되었습니다!\n\n아래 [공인 인증받기]를 진행하시면 관리자 EMR 실사 후 온라인에 정식 공개됩니다.`);
         closeModal();
         this.registerForm.reset();
+      });
+    }
+
+    // 8. "공인 인증받기" Click Flow
+    if (this.btnRequestVerify) {
+      this.btnRequestVerify.addEventListener('click', () => {
+        if (!this.myPendingTower) return;
+        alert(`[공인 인증 심사 접수 완료]\n\n원장님(${this.myPendingTower.name} / ${this.myPendingTower.clinic})의 의사면허(${this.myPendingTower.licenseNo}) 및 EMR 전자차트 공증 실사가 시작되었습니다.\n\n관리자 현장/전산 공인 인증 완료 시 전세계 LipoRank 공식 랭킹 리더보드에 정식 공개됩니다.`);
+        if (this.auditStatusTag) {
+          this.auditStatusTag.textContent = '공인 실사 심사 진행중 (온라인 공개 예정)';
+          this.auditStatusTag.style.background = '#fef3c7';
+          this.auditStatusTag.style.color = '#b45309';
+        }
       });
     }
   }
@@ -348,12 +344,7 @@ class LipoRankApp {
     }
   }
 
-  updateObjectTabsAndDots(objectId) {
-    const activeIdx = COMPARISON_OBJECTS.findIndex(c => c.id === objectId);
-    this.dots.forEach((dot, idx) => {
-      dot.classList.toggle('active', idx === activeIdx);
-    });
-
+  updateObjectTabs(objectId) {
     this.objectTabs.forEach(tab => {
       tab.classList.toggle('active', tab.dataset.objectId === objectId);
     });
@@ -362,12 +353,13 @@ class LipoRankApp {
   updateAllTexts(liters, objectId) {
     const formattedL = liters.toLocaleString();
     const cubeCount = (liters / 1000).toFixed(2);
+    const heightM = (cubeCount * 1.0).toFixed(2);
 
     if (this.currentVolText) {
       this.currentVolText.textContent = `${formattedL} L`;
     }
     if (this.cubeCountBadge) {
-      this.cubeCountBadge.textContent = `${cubeCount} 개 완판`;
+      this.cubeCountBadge.textContent = `${cubeCount} 개 (높이 ${heightM}m)`;
     }
     if (this.centerHighlightAmount) {
       this.centerHighlightAmount.textContent = `${formattedL}L`;
@@ -386,27 +378,24 @@ class LipoRankApp {
     }
 
     if (this.centerHighlightRatio) {
-      this.centerHighlightRatio.textContent = `1m³ 큐브 ${cubeCount}개 완판`;
+      this.centerHighlightRatio.textContent = `4.82m 높이 돌파`;
     }
 
     if (this.flexComparisonText) {
-      const cfg = COMPARISON_OBJECTS.find(c => c.id === objectId) || COMPARISON_OBJECTS[1];
-      let customMsg = `<strong>1m³(1,000L) 큐브 ${cubeCount}개</strong> 및 <strong>${cfg.name}</strong> 완판 체적입니다!`;
+      const cfg = COMPARISON_OBJECTS.find(c => c.id === objectId) || COMPARISON_OBJECTS[2];
+      let customMsg = `<strong>1m³(1,000L) 글래스 큐브 ${cubeCount}개 (높이 ${heightM}m)</strong> 및 <strong>${cfg.name}</strong> 완판 체적입니다!`;
       if (objectId === 'lamborghini') {
         const pct = ((liters / 4700) * 100).toFixed(1);
-        customMsg = `<strong>1m³ 큐브 ${cubeCount}개</strong> 및 <strong>람보르기니 우라칸 1대(${pct}%)</strong>를 황금빛 순수 지방으로 완판한 대기록입니다!`;
+        customMsg = `<strong>1m³ 큐브 ${cubeCount}개 (높이 ${heightM}m)</strong> 및 <strong>람보르기니 우라칸 1대(${pct}%)</strong>를 순수 지방으로 완판한 대기록입니다!`;
       } else if (objectId === 'cybertruck') {
         const pct = ((liters / 7100) * 100).toFixed(1);
         customMsg = `<strong>1m³ 큐브 ${cubeCount}개</strong> 및 <strong>테슬라 사이버트럭의 ${pct}%</strong>를 황금빛 순수 지방으로 채운 체적입니다!`;
       } else if (objectId === 'fiji_bottle') {
         const bottles = Math.round(liters / 0.5);
         customMsg = `<strong>1m³ 큐브 ${cubeCount}개</strong> 및 500ml 생수병 <strong>${bottles.toLocaleString()}병</strong>을 가득 채운 양입니다!`;
-      } else if (objectId === 'statue_of_liberty') {
-        const pct = ((liters / 15000) * 100).toFixed(1);
-        customMsg = `<strong>1m³ 큐브 ${cubeCount}개</strong> 및 <strong>자유의 여신상 기단부의 ${pct}%</strong>에 도달한 거대한 실적입니다!`;
-      } else if (objectId === 'swimming_pool') {
-        const pct = ((liters / 2500000) * 100).toFixed(4);
-        customMsg = `<strong>1m³ 큐브 ${cubeCount}개</strong> 및 올림픽 공인 수영장의 <strong>${pct}%</strong>에 해당하는 체적입니다!`;
+      } else if (objectId === 'cow') {
+        const cows = (liters / 300).toFixed(1);
+        customMsg = `<strong>1m³ 큐브 ${cubeCount}개</strong> 및 성체 젖소 <strong>${cows}마리분</strong>의 체지방량입니다!`;
       }
       this.flexComparisonText.innerHTML = customMsg;
     }
@@ -416,16 +405,16 @@ class LipoRankApp {
     }
   }
 
-  renderMyPendingBanner() {
+  renderMyRegisteredBanner() {
     if (this.myPendingTower) {
-      if (this.myPendingBannerHome) {
-        this.myPendingBannerHome.style.display = 'flex';
-        if (this.myPendingNameHome) this.myPendingNameHome.textContent = this.myPendingTower.name;
-        if (this.myPendingClinicHome) this.myPendingClinicHome.textContent = this.myPendingTower.clinic;
-        if (this.myPendingLitersHome) this.myPendingLitersHome.textContent = `${this.myPendingTower.totalLiters.toLocaleString()} L`;
+      if (this.myRegisteredBanner) {
+        this.myRegisteredBanner.style.display = 'flex';
+        if (this.myRegisteredName) this.myRegisteredName.textContent = this.myPendingTower.name;
+        if (this.myRegisteredClinic) this.myRegisteredClinic.textContent = this.myPendingTower.clinic;
+        if (this.myRegisteredLiters) this.myRegisteredLiters.textContent = `${this.myPendingTower.totalLiters.toLocaleString()} L`;
       }
     } else {
-      if (this.myPendingBannerHome) this.myPendingBannerHome.style.display = 'none';
+      if (this.myRegisteredBanner) this.myRegisteredBanner.style.display = 'none';
     }
     this.refreshIcons();
   }
@@ -477,7 +466,6 @@ class LipoRankApp {
           this.currentLiters = doc.totalLiters;
           if (this.volSlider) this.volSlider.value = doc.totalLiters;
           this.scene.setVolume(doc.totalLiters);
-          // Navigate to home and smoothly scroll to 3D canvas
           window.location.hash = '#home';
           window.scrollTo({ top: 0, behavior: 'smooth' });
         });
