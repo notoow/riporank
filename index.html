@@ -82,6 +82,16 @@
           
           <!-- Viewport Top Floating Controls (Sunset & Walk-in Mode) -->
           <div class="viewport-controls-bar">
+            <!-- Private Tower Status Pill (appears when registered) -->
+            <div id="private-tower-pill" class="private-status-pill" style="display: none;">
+              <span class="pill-lock-icon"><i data-lucide="lock" class="icon-xs"></i></span>
+              <span class="pill-text">내 탑 등록됨 (<strong>나만 보기</strong>)</span>
+              <button id="btn-pill-verify" class="pill-verify-btn">
+                <i data-lucide="shield-check" class="icon-xs"></i>
+                <span>공인 인증받고 전세계 공개</span>
+              </button>
+            </div>
+
             <!-- Sunset Mode Toggle -->
             <button id="btn-toggle-sunset" class="action-pill-btn" title="황금빛 노을 모드 토글">
               <i data-lucide="sunset" class="icon-sm"></i>

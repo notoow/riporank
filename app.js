@@ -80,6 +80,8 @@ class LipoRankApp {
     this.myRegisteredLiters = document.getElementById('my-registered-liters');
     this.btnRequestVerify = document.getElementById('btn-request-verify');
     this.auditStatusTag = document.getElementById('audit-status-tag');
+    this.privateTowerPill = document.getElementById('private-tower-pill');
+    this.btnPillVerify = document.getElementById('btn-pill-verify');
   }
 
   initNavigation() {
@@ -281,14 +283,43 @@ class LipoRankApp {
     };
 
     if (this.btnRegisterRankBottom) {
-      this.btnRegisterRankBottom.addEventListener('click', openModal);
+      this.btnRegisterRankBottom.addEventListener('click', () => {
+        // Instant Register: 바로 3D 캔버스 적당한 위치로 슬라이드 등록!
+        const liters = this.currentLiters;
+        const currentData = {
+          name: '내 원장',
+          licenseNo: '비공개',
+          clinic: '미인증 의원',
+          totalLiters: liters,
+          cases: Math.round(liters / 2.5),
+          crmSystem: '미연동',
+          contact: ''
+        };
+
+        const registered = submitDoctorApplication(currentData);
+        this.myPendingTower = registered;
+
+        // Slide the preview tower immediately into its height-ranked lineup slot
+        this.scene.confirmAndRegisterMyTower(registered);
+        this.renderMyRegisteredBanner();
+
+        // Visual feedback
+        this.showRegistrationNotice(liters);
+      });
     }
+
     if (this.modalClose) {
       this.modalClose.addEventListener('click', closeModal);
     }
     if (this.registerModal) {
       this.registerModal.addEventListener('click', e => {
         if (e.target === this.registerModal) closeModal();
+      });
+    }
+
+    if (this.btnPillVerify) {
+      this.btnPillVerify.addEventListener('click', () => {
+        openModal();
       });
     }
 
@@ -476,6 +507,41 @@ class LipoRankApp {
     }
   }
 
+  showRegistrationNotice(liters) {
+    // Show non-blocking sleek toast/notice
+    const toast = document.createElement('div');
+    toast.className = 'reg-success-toast';
+    toast.innerHTML = `
+      <div class="toast-icon"><i data-lucide="check-circle" class="icon-md"></i></div>
+      <div class="toast-body">
+        <strong>내 3D 큐브 탑(${liters.toLocaleString()}L)이 라인업에 등록되었습니다!</strong>
+        <p>현재 상태는 <em>[나만 보기]</em> 모드입니다. 관리자 EMR 실사 인증을 완료하면 전세계 공식 랭킹에 공개됩니다.</p>
+      </div>
+      <button class="toast-btn-action" id="toast-verify-btn">인증 신청</button>
+    `;
+    document.body.appendChild(toast);
+    this.refreshIcons();
+
+    const verifyBtn = toast.querySelector('#toast-verify-btn');
+    if (verifyBtn) {
+      verifyBtn.addEventListener('click', () => {
+        toast.remove();
+        if (this.registerModal) {
+          const litersInput = document.getElementById('reg-liters');
+          if (litersInput) litersInput.value = liters;
+          this.registerModal.classList.add('active');
+          this.refreshIcons();
+        }
+      });
+    }
+
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translate(-50%, 20px)';
+      setTimeout(() => toast.remove(), 400);
+    }, 6000);
+  }
+
   renderMyRegisteredBanner() {
     if (this.myPendingTower) {
       if (this.myRegisteredBanner) {
@@ -484,8 +550,14 @@ class LipoRankApp {
         if (this.myRegisteredClinic) this.myRegisteredClinic.textContent = this.myPendingTower.clinic;
         if (this.myRegisteredLiters) this.myRegisteredLiters.textContent = `${this.myPendingTower.totalLiters.toLocaleString()} L`;
       }
+      if (this.privateTowerPill) {
+        this.privateTowerPill.style.display = 'inline-flex';
+      }
     } else {
       if (this.myRegisteredBanner) this.myRegisteredBanner.style.display = 'none';
+      if (this.privateTowerPill) {
+        this.privateTowerPill.style.display = 'none';
+      }
     }
     this.refreshIcons();
   }

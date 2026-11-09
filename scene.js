@@ -469,6 +469,57 @@ export class LipoRankScene {
     const pinMesh = new THREE.Mesh(pinGeo, pinMat);
     markerGroup.add(pinMesh);
 
+    // Canvas label Sprite above the tower
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 140;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        // Rounded background card
+        ctx.fillStyle = isPrivate ? 'rgba(15, 23, 42, 0.85)' : 'rgba(255, 255, 255, 0.92)';
+        const r = 24;
+        ctx.beginPath();
+        ctx.roundRect(16, 16, 480, 108, r);
+        ctx.fill();
+
+        ctx.strokeStyle = isPrivate ? '#38bdf8' : '#0953ff';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // Badge pill text
+        if (isPrivate) {
+          ctx.fillStyle = '#38bdf8';
+          ctx.font = 'bold 28px Pretendard, sans-serif';
+          ctx.fillText('🔒 나만 보기 (공인 인증 심사 필요)', 256, 48);
+          
+          ctx.fillStyle = '#f8fafc';
+          ctx.font = 'bold 36px Pretendard, sans-serif';
+          ctx.fillText(`내 수술탑 ${liters.toLocaleString()}L`, 256, 92);
+        } else {
+          ctx.fillStyle = '#0953ff';
+          ctx.font = 'bold 28px Pretendard, sans-serif';
+          ctx.fillText('★ 공인 1위 SAMPLE 원장', 256, 48);
+
+          ctx.fillStyle = '#0f172a';
+          ctx.font = 'bold 36px Pretendard, sans-serif';
+          ctx.fillText(`${liters.toLocaleString()}L (공인 4.82m)`, 256, 92);
+        }
+
+        const texture = new THREE.CanvasTexture(canvas);
+        const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
+        const sprite = new THREE.Sprite(spriteMat);
+        sprite.position.set(0, 0.75, 0);
+        sprite.scale.set(2.2, 0.6, 1.0);
+        markerGroup.add(sprite);
+      }
+    } catch (e) {
+      console.warn('Canvas texture creation error:', e);
+    }
+
     group.add(markerGroup);
   }
 
@@ -540,14 +591,43 @@ export class LipoRankScene {
    * Smoothly slides the front preview tower to its height-ranked slot in lineup!
    */
   confirmAndRegisterMyTower(doctorData) {
-    const liters = doctorData.totalLiters;
+    const liters = doctorData.totalLiters || this.selectedLiters;
     
-    // Determine height-ranked X position (placed between cow and cybertruck at x = 1.4m)
-    const targetX = 1.4;
+    // Calculate appropriate X position based on height/liters rank in the lineup:
+    // fiji (0.5L): x=-22
+    // barrel (200L): x=-19
+    // cow (300L): x=-5
+    // thinker (500L): x=12 (art)
+    // lambo (4700L): x=-14
+    // SAMPLE tower (4820L): x=-8.5
+    // cybertruck (7100L): x=4.5
+    // rex (8000L): x=20
+    // statue (15000L): x=29
+    // pool (2500000L): x=38
+    let targetX = 0.5; // Default between cow/human and cybertruck
+    if (liters < 100) {
+      targetX = -20.5;
+    } else if (liters < 250) {
+      targetX = -16.5;
+    } else if (liters < 400) {
+      targetX = -3.2;
+    } else if (liters < 2000) {
+      targetX = 1.0;
+    } else if (liters < 4820) {
+      targetX = -10.5; // near lamborghini / official tower
+    } else if (liters < 7100) {
+      targetX = 1.8; // between human and cybertruck
+    } else if (liters < 8000) {
+      targetX = 8.5; // between cybertruck and thinker
+    } else if (liters < 15000) {
+      targetX = 24.5; // between rex and statue
+    } else {
+      targetX = 33.5; // between statue and pool
+    }
     const targetZ = 0.0;
 
     // Build the registered tower in preview position first
-    this.buildTowerMesh(this.registeredMyTowerGroup, liters, 0, 1.6, true, `${doctorData.name} 탑`);
+    this.buildTowerMesh(this.registeredMyTowerGroup, liters, 0, 1.6, true, `${doctorData.name || '내'} 탑`);
     this.previewTowerGroup.visible = false;
     this.auraGroup.visible = false;
 
@@ -556,6 +636,17 @@ export class LipoRankScene {
     this.slideProgress = 0.0;
     this.slideStartPos.set(0, 0, 1.6);
     this.slideTargetPos.set(targetX, 0, targetZ);
+
+    // Pan camera to follow the registered tower smoothly
+    const cubes = Math.max(1, Math.ceil(liters / 1000));
+    const targetLookY = Math.min(6.0, cubes * 0.55);
+    const camY = Math.max(2.2, targetLookY + 0.8);
+    const camZ = Math.max(6.0, 4.0 + cubes * 0.4);
+
+    this.startCameraTransition(
+      new THREE.Vector3(targetX, camY, camZ),
+      new THREE.Vector3(targetX, targetLookY, targetZ)
+    );
   }
 
   /**

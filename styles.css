@@ -1523,15 +1523,185 @@ body {
   outline: none;
 }
 .form-group input:focus, .form-group select:focus { border-color: var(--primary); }
-.btn-modal-submit {
-  width: 100%;
-  background: var(--primary);
+/* 14. Private Registered Tower UI & Sleek Notification */
+.private-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  padding: 6px 14px;
+  border-radius: 20px;
+  color: #f8fafc;
+  font-size: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  animation: fadeIn 0.3s ease;
+}
+
+.pill-lock-icon {
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+}
+
+.pill-text {
+  color: #e2e8f0;
+}
+
+.pill-text strong {
+  color: #38bdf8;
+}
+
+.pill-verify-btn {
+  background: linear-gradient(135deg, #0953ff 0%, #0043d9 100%);
   color: white;
   border: none;
-  padding: 12px;
-  font-size: 14px;
-  font-weight: 800;
-  border-radius: 10px;
+  border-radius: 14px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   cursor: pointer;
-  margin-top: 10px;
+  transition: all 0.15s;
+  box-shadow: 0 2px 6px rgba(9, 83, 255, 0.3);
 }
+
+.pill-verify-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(9, 83, 255, 0.45);
+}
+
+.reg-success-toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0f172a;
+  color: #ffffff;
+  padding: 16px 24px;
+  border-radius: 18px;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.28);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 9999;
+  max-width: 620px;
+  width: 90%;
+  animation: toastSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.3s ease;
+}
+
+@keyframes toastSlideUp {
+  from { opacity: 0; transform: translate(-50%, 20px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.toast-icon {
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+.toast-body {
+  flex: 1;
+}
+
+.toast-body strong {
+  font-size: 14px;
+  color: #ffffff;
+  display: block;
+  margin-bottom: 3px;
+}
+
+.toast-body p {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.toast-body em {
+  color: #38bdf8;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.toast-btn-action {
+  background: #0953ff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.toast-btn-action:hover {
+  background: #0043d9;
+}
+
+.my-registered-card {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+  border: 2px solid #bbf7d0;
+  border-radius: 18px;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.08);
+}
+
+.badge-my-tower {
+  background: #10b981;
+  color: white;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+.tag-unverified {
+  background: #fef3c7;
+  color: #b45309;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+.reg-desc {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.reg-liters-num {
+  font-size: 22px;
+  font-weight: 900;
+  color: #0953ff;
+  display: block;
+  text-align: right;
+  margin-bottom: 8px;
+}
+
+.btn-request-verify {
+  background: #0953ff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
