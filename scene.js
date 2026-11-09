@@ -491,6 +491,18 @@ export class LipoRankScene {
     this.onVolumeChange(liters);
   }
 
+  toggleObjectVisibility(objectId) {
+    const holder = this.modelHolders[objectId];
+    if (!holder) return false;
+    holder.visible = !holder.visible;
+    return holder.visible;
+  }
+
+  isObjectVisible(objectId) {
+    const holder = this.modelHolders[objectId];
+    return holder ? holder.visible : false;
+  }
+
   updateSmartLandmarkVisibility(liters) {
     this.objectConfigs.forEach(cfg => {
       if (cfg.minLitersThreshold && this.modelHolders[cfg.id]) {
@@ -612,6 +624,12 @@ export class LipoRankScene {
   enterFirstPersonMode() {
     this.cameraMode = 'walkin';
     this.controls.enabled = false;
+    this.prevMousePos = { x: 0, y: 0, init: false };
+
+    // Request pointer lock for true FPS mouse-look if permitted
+    try {
+      this.renderer.domElement.requestPointerLock?.();
+    } catch (e) {}
 
     this.startCameraTransition(
       new THREE.Vector3(0, 1.35, 3.8),
@@ -623,6 +641,11 @@ export class LipoRankScene {
   }
 
   exitFirstPersonMode() {
+    if (document.pointerLockElement) {
+      try {
+        document.exitPointerLock?.();
+      } catch (e) {}
+    }
     this.controls.enabled = true;
     this.exitGiantView();
   }
@@ -691,33 +714,47 @@ export class LipoRankScene {
       if (this.keys.hasOwnProperty(k)) this.keys[k] = false;
     });
 
-    this.container.addEventListener('mousedown', e => {
-      this.isMouseDown = true;
-      this.prevMousePos.x = e.clientX;
-      this.prevMousePos.y = e.clientY;
-    });
-
-    window.addEventListener('mouseup', () => {
-      this.isMouseDown = false;
-    });
-
+    // Mouse move for FPS camera control in walk-in mode
     window.addEventListener('mousemove', e => {
-      if (!this.isMouseDown || this.cameraMode !== 'walkin') return;
-      const deltaX = e.clientX - this.prevMousePos.x;
-      const deltaY = e.clientY - this.prevMousePos.y;
-      this.prevMousePos.x = e.clientX;
-      this.prevMousePos.y = e.clientY;
+      if (this.cameraMode !== 'walkin') return;
 
-      this.cameraEuler.y -= deltaX * 0.003;
-      this.cameraEuler.x -= deltaY * 0.003;
-      this.cameraEuler.x = Math.max(-1.4, Math.min(1.4, this.cameraEuler.x));
+      let movementX = e.movementX;
+      let movementY = e.movementY;
+
+      // Fallback if Pointer Lock isn't active or movementX is undefined
+      if (movementX === undefined || (movementX === 0 && movementY === 0 && !document.pointerLockElement)) {
+        if (!this.prevMousePos.init) {
+          this.prevMousePos.x = e.clientX;
+          this.prevMousePos.y = e.clientY;
+          this.prevMousePos.init = true;
+          return;
+        }
+        movementX = e.clientX - this.prevMousePos.x;
+        movementY = e.clientY - this.prevMousePos.y;
+        this.prevMousePos.x = e.clientX;
+        this.prevMousePos.y = e.clientY;
+      }
+
+      this.cameraEuler.y -= (movementX || 0) * 0.0025;
+      this.cameraEuler.x -= (movementY || 0) * 0.0025;
+      this.cameraEuler.x = Math.max(-1.45, Math.min(1.45, this.cameraEuler.x));
       this.camera.quaternion.setFromEuler(this.cameraEuler);
+    });
+
+    // Pointer lock change listener
+    document.addEventListener('pointerlockchange', () => {
+      if (!document.pointerLockElement && this.cameraMode === 'walkin') {
+        // user pressed ESC or unlocked pointer
+      }
     });
 
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
     this.container.addEventListener('click', e => {
+      // In walk-in mode, clicks do not trigger giant view
+      if (this.cameraMode === 'walkin') return;
+
       const rect = this.container.getBoundingClientRect();
       mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;

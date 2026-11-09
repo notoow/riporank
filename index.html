@@ -102,9 +102,7 @@
               <span class="sep">|</span>
               <span class="key-badge">Q</span><span class="key-badge">E</span> 높이 조절
               <span class="sep">|</span>
-              <i data-lucide="mouse-pointer" class="icon-sm"></i> 마우스 드래그: 시선 회전
-              <span class="sep">|</span>
-              사물 클릭: 거인 뷰
+              <i data-lucide="mouse-pointer" class="icon-sm"></i> 마우스 이동: FPS 시점 회전
             </div>
             <button id="btn-exit-walkin" class="btn-exit-hud">
               <i data-lucide="corner-up-left" class="icon-sm"></i>
@@ -112,27 +110,36 @@
             </button>
           </div>
 
-          <!-- Carousel Nav Buttons -->
-          <button id="carousel-prev" class="carousel-arrow prev" title="이전 사물">
+          <!-- Carousel Nav Buttons (Placed at Top Left & Right of Stage) -->
+          <button id="carousel-prev" class="carousel-arrow prev" title="이전 사물 탐색">
             <i data-lucide="chevron-left"></i>
           </button>
-          <button id="carousel-next" class="carousel-arrow next" title="다음 사물">
+          <button id="carousel-next" class="carousel-arrow next" title="다음 사물 탐색">
             <i data-lucide="chevron-right"></i>
           </button>
 
-          <!-- Real-scale Object Tabs Strip (Scrollable) -->
+          <!-- Real-scale Object Tabs Strip (Scrollable & with Visibility Toggles) -->
           <div id="labels-overlay" class="stage-labels-overlay">
             <div class="object-label-tab" data-object-id="fiji_bottle">
+              <button class="btn-vis-toggle" data-vis-id="fiji_bottle" title="가시성 토글">
+                <i data-lucide="eye" class="icon-xs"></i>
+              </button>
               <div class="label-title">생수병</div>
               <div class="label-vol">500ml · 22cm</div>
             </div>
 
             <div class="object-label-tab" data-object-id="new_thin_barrel">
+              <button class="btn-vis-toggle" data-vis-id="new_thin_barrel" title="가시성 토글">
+                <i data-lucide="eye" class="icon-xs"></i>
+              </button>
               <div class="label-title">드럼통</div>
               <div class="label-vol">200L · 88cm</div>
             </div>
 
             <div class="object-label-tab" data-object-id="lamborghini">
+              <button class="btn-vis-toggle" data-vis-id="lamborghini" title="가시성 토글">
+                <i data-lucide="eye" class="icon-xs"></i>
+              </button>
               <div class="label-title">람보르기니</div>
               <div class="label-vol">4,700L · 1.16m</div>
             </div>
@@ -145,18 +152,59 @@
             </div>
 
             <div class="object-label-tab" data-object-id="cow">
+              <button class="btn-vis-toggle" data-vis-id="cow" title="가시성 토글">
+                <i data-lucide="eye" class="icon-xs"></i>
+              </button>
               <div class="label-title">성체 젖소</div>
               <div class="label-vol">300L · 1.45m</div>
             </div>
 
+            <div class="object-label-tab" data-object-id="human_body">
+              <button class="btn-vis-toggle" data-vis-id="human_body" title="가시성 토글">
+                <i data-lucide="eye" class="icon-xs"></i>
+              </button>
+              <div class="label-title">성인 인체</div>
+              <div class="label-vol">70L · 1.75m</div>
+            </div>
+
             <div class="object-label-tab" data-object-id="cybertruck">
+              <button class="btn-vis-toggle" data-vis-id="cybertruck" title="가시성 토글">
+                <i data-lucide="eye" class="icon-xs"></i>
+              </button>
               <div class="label-title">사이버트럭</div>
               <div class="label-vol">7,100L · 1.79m</div>
             </div>
 
+            <div class="object-label-tab" data-object-id="thinker_rodin">
+              <button class="btn-vis-toggle" data-vis-id="thinker_rodin" title="가시성 토글">
+                <i data-lucide="eye" class="icon-xs"></i>
+              </button>
+              <div class="label-title">생각하는사람</div>
+              <div class="label-vol">500L · 1.8m</div>
+            </div>
+
             <div class="object-label-tab" data-object-id="tyrannosaurus_rex">
-              <div class="label-title">티라노사우루스</div>
+              <button class="btn-vis-toggle" data-vis-id="tyrannosaurus_rex" title="가시성 토글">
+                <i data-lucide="eye" class="icon-xs"></i>
+              </button>
+              <div class="label-title">티라노</div>
               <div class="label-vol">8,000L · 3.8m</div>
+            </div>
+
+            <div class="object-label-tab" data-object-id="statue_of_liberty">
+              <button class="btn-vis-toggle is-off" data-vis-id="statue_of_liberty" title="가시성 켜기/끄기">
+                <i data-lucide="eye-off" class="icon-xs"></i>
+              </button>
+              <div class="label-title">자유의여신상</div>
+              <div class="label-vol">1.5만L · 12m</div>
+            </div>
+
+            <div class="object-label-tab" data-object-id="swimming_pool">
+              <button class="btn-vis-toggle is-off" data-vis-id="swimming_pool" title="가시성 켜기/끄기">
+                <i data-lucide="eye-off" class="icon-xs"></i>
+              </button>
+              <div class="label-title">올림픽수영장</div>
+              <div class="label-vol">250만L · 20m</div>
             </div>
           </div>
 

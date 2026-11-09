@@ -195,9 +195,12 @@ class LipoRankApp {
       });
     }
 
-    // 4. Object Tab Clicks
+    // 4. Object Tab Clicks & Visibility Toggles
     this.objectTabs.forEach(tab => {
-      tab.addEventListener('click', () => {
+      tab.addEventListener('click', (e) => {
+        // If clicked on the eye toggle button, don't trigger selection/giant view
+        if (e.target.closest('.btn-vis-toggle')) return;
+
         const objId = tab.dataset.objectId;
         if (objId) {
           if (this.scene.cameraMode === 'giant') {
@@ -205,6 +208,24 @@ class LipoRankApp {
           } else {
             this.scene.setActiveObject(objId);
           }
+        }
+      });
+    });
+
+    // Visibility toggle eye buttons
+    document.querySelectorAll('.btn-vis-toggle').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const objId = btn.dataset.visId;
+        if (!objId || !this.scene) return;
+
+        const isVisible = this.scene.toggleObjectVisibility(objId);
+        btn.classList.toggle('is-off', !isVisible);
+
+        const icon = btn.querySelector('i');
+        if (icon) {
+          icon.setAttribute('data-lucide', isVisible ? 'eye' : 'eye-off');
+          this.refreshIcons();
         }
       });
     });
