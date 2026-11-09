@@ -47,8 +47,10 @@ export class LipoRankScene {
     this.camTransitionProgress = 1.0;
 
     // First-Person Walk-in Controls (WASD + QE + Mouse Look)
-    this.keys = { w: false, a: false, s: false, d: false, q: false, e: false };
-    this.moveSpeed = 4.2;
+    this.keys = { w: false, a: false, s: false, d: false, q: false, e: false, shift: false };
+    this.baseMoveSpeed = 4.2;
+    this.maxSprintSpeed = 16.0;
+    this.currentSprintSpeed = 4.2;
     this.isMouseDown = false;
     this.prevMousePos = { x: 0, y: 0 };
     this.cameraEuler = new THREE.Euler(0, 0, 0, 'YXZ');
@@ -159,7 +161,7 @@ export class LipoRankScene {
   }
 
   initStudioFloor() {
-    const floorGeo = new THREE.PlaneGeometry(120, 120);
+    const floorGeo = new THREE.PlaneGeometry(300, 300);
     const floorMat = new THREE.ShadowMaterial({ opacity: 0.12 });
     this.shadowFloor = new THREE.Mesh(floorGeo, floorMat);
     this.shadowFloor.rotation.x = -Math.PI / 2;
@@ -473,10 +475,10 @@ export class LipoRankScene {
   /**
    * "내 수술량 조절": Spawns the preview tower in front stage (z = 1.6) with glowing aura
    */
-  setVolume(liters) {
+  setVolume(liters, focusCamera = true) {
     this.selectedLiters = liters;
 
-    // Show Preview Tower with glowing aura in front of lineup
+    // Show Preview Tower with glowing aura in front of lineup (z = 1.6)
     this.buildTowerMesh(this.previewTowerGroup, liters, 0, 1.6, true, '내 조절 탑');
     this.auraGroup.visible = true;
 
@@ -488,10 +490,31 @@ export class LipoRankScene {
       this.applyGlassFill(this.activeObjectId, liters);
     }
 
+    // Auto-focus camera onto my preview tower when slider is adjusted
+    if (focusCamera && this.cameraMode !== 'walkin') {
+      const cubes = Math.max(1, Math.ceil(liters / 1000));
+      const targetLookY = Math.min(6.0, cubes * 0.55);
+      const camY = Math.max(1.8, targetLookY + 0.6);
+      const camZ = Math.max(4.5, 3.2 + cubes * 0.4);
+
+      this.startCameraTransition(
+        new THREE.Vector3(0, camY, camZ),
+        new THREE.Vector3(0, targetLookY, 1.6)
+      );
+    }
+
     this.onVolumeChange(liters);
   }
 
+  toggleOfficialTowerVisibility() {
+    this.officialTowerGroup.visible = !this.officialTowerGroup.visible;
+    return this.officialTowerGroup.visible;
+  }
+
   toggleObjectVisibility(objectId) {
+    if (objectId === 'sample_tower' || objectId === 'official_tower') {
+      return this.toggleOfficialTowerVisibility();
+    }
     const holder = this.modelHolders[objectId];
     if (!holder) return false;
     holder.visible = !holder.visible;
@@ -785,6 +808,15 @@ export class LipoRankScene {
   updateWalkinMovement(delta) {
     if (this.cameraMode !== 'walkin' || this.isTransitioningCamera) return;
 
+    // Shift key enables gradual acceleration (sprint)
+    if (this.keys.shift) {
+      this.currentSprintSpeed = Math.min(this.maxSprintSpeed, this.currentSprintSpeed + delta * 14.0);
+    } else {
+      this.currentSprintSpeed = Math.max(this.baseMoveSpeed, this.currentSprintSpeed - delta * 20.0);
+    }
+
+    const currentSpeed = this.currentSprintSpeed;
+
     const moveVector = new THREE.Vector3();
     const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion);
     forward.y = 0;
@@ -800,13 +832,13 @@ export class LipoRankScene {
     if (this.keys.a) moveVector.sub(right);
 
     if (moveVector.lengthSq() > 0) {
-      moveVector.normalize().multiplyScalar(this.moveSpeed * delta);
+      moveVector.normalize().multiplyScalar(currentSpeed * delta);
       this.camera.position.add(moveVector);
     }
 
-    if (this.keys.e) this.camera.position.y += this.moveSpeed * delta * 0.8;
-    if (this.keys.q) this.camera.position.y -= this.moveSpeed * delta * 0.8;
-    this.camera.position.y = Math.max(0.4, Math.min(18.0, this.camera.position.y));
+    if (this.keys.e) this.camera.position.y += currentSpeed * delta * 0.8;
+    if (this.keys.q) this.camera.position.y -= currentSpeed * delta * 0.8;
+    this.camera.position.y = Math.max(0.4, Math.min(28.0, this.camera.position.y));
   }
 
   animate() {

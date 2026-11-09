@@ -181,7 +181,7 @@ export const COMPARISON_OBJECTS = [
       return `거대 공룡 티라노사우루스 전체 체적의 <strong>${((liters / 8000) * 100).toFixed(1)}%</strong>에 달하는 양입니다!`;
     }
   },
-  // Giant Landmarks: Auto-visibility toggled only when comparable tower volume or user focus
+  // Giant Landmarks: Evenly spaced (approx 7m interval from T-Rex)
   {
     id: 'statue_of_liberty',
     name: '자유의 여신상',
@@ -190,11 +190,11 @@ export const COMPARISON_OBJECTS = [
     volumeMlText: '15,000L',
     modelPath: './assets/models/statue_of_liberty.glb',
     targetHeight: 12.0,
-    position: [34.0, 0, 0.0],
+    position: [23.0, 0, 0.0],
     rotation: [0, Math.PI * 0.12, 0],
     description: '자유의 여신상 (체적 15,000L)',
-    heroCamPos: [34.0, 2.5, 9.0],
-    heroLookAt: [34.0, 5.0, 0.0],
+    heroCamPos: [23.0, 2.5, 9.0],
+    heroLookAt: [23.0, 5.0, 0.0],
     isAlwaysVisible: false,
     minLitersThreshold: 10000,
     getRatioText: (liters) => `${((liters / 15000) * 100).toFixed(1)}% 도달`,
@@ -211,11 +211,11 @@ export const COMPARISON_OBJECTS = [
     volumeMlText: '2,500,000L',
     modelPath: './assets/models/swimming_pool_343.glb',
     targetLength: 20.0,
-    position: [56.0, 0, 0.0],
+    position: [31.0, 0, 0.0],
     rotation: [0, -Math.PI * 0.65, 0],
     description: '올림픽 공인 규격 수영장 (250만L)',
-    heroCamPos: [56.0, 4.0, 14.0],
-    heroLookAt: [56.0, 1.0, 0.0],
+    heroCamPos: [31.0, 4.0, 14.0],
+    heroLookAt: [31.0, 1.0, 0.0],
     isAlwaysVisible: false,
     minLitersThreshold: 50000,
     getRatioText: (liters) => `${((liters / 2500000) * 100).toFixed(4)}% 수위`,

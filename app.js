@@ -175,11 +175,8 @@ class LipoRankApp {
         const currIdx = COMPARISON_OBJECTS.findIndex(c => c.id === this.scene.activeObjectId);
         const prevIdx = (currIdx - 1 + COMPARISON_OBJECTS.length) % COMPARISON_OBJECTS.length;
         const targetId = COMPARISON_OBJECTS[prevIdx].id;
-        if (this.scene.cameraMode === 'giant') {
-          this.scene.enterGiantView(targetId);
-        } else {
-          this.scene.setActiveObject(targetId);
-        }
+        this.scene.enterGiantView(targetId);
+        this.updateObjectTabs(targetId);
       });
     }
     if (this.btnNext) {
@@ -187,11 +184,8 @@ class LipoRankApp {
         const currIdx = COMPARISON_OBJECTS.findIndex(c => c.id === this.scene.activeObjectId);
         const nextIdx = (currIdx + 1) % COMPARISON_OBJECTS.length;
         const targetId = COMPARISON_OBJECTS[nextIdx].id;
-        if (this.scene.cameraMode === 'giant') {
-          this.scene.enterGiantView(targetId);
-        } else {
-          this.scene.setActiveObject(targetId);
-        }
+        this.scene.enterGiantView(targetId);
+        this.updateObjectTabs(targetId);
       });
     }
 
@@ -203,11 +197,19 @@ class LipoRankApp {
 
         const objId = tab.dataset.objectId;
         if (objId) {
-          if (this.scene.cameraMode === 'giant') {
-            this.scene.enterGiantView(objId);
-          } else {
-            this.scene.setActiveObject(objId);
+          if (objId === 'sample_tower') {
+            // Focus camera on SAMPLE official tower (x = -8.5, height = 4.82m)
+            this.scene.startCameraTransition(
+              new THREE.Vector3(-8.5, 3.0, 7.5),
+              new THREE.Vector3(-8.5, 2.4, 0.0)
+            );
+            this.updateObjectTabs(objId);
+            return;
           }
+
+          // Always enter Giant View (close-up cinematic view) when clicking object tab
+          this.scene.enterGiantView(objId);
+          this.updateObjectTabs(objId);
         }
       });
     });
@@ -221,12 +223,8 @@ class LipoRankApp {
 
         const isVisible = this.scene.toggleObjectVisibility(objId);
         btn.classList.toggle('is-off', !isVisible);
-
-        const icon = btn.querySelector('i');
-        if (icon) {
-          icon.setAttribute('data-lucide', isVisible ? 'eye' : 'eye-off');
-          this.refreshIcons();
-        }
+        btn.title = isVisible ? '가시성 끄기 (현재 켜짐)' : '가시성 켜기 (현재 숨김)';
+        this.refreshIcons();
       });
     });
 
@@ -366,9 +364,25 @@ class LipoRankApp {
   }
 
   updateObjectTabs(objectId) {
+    let activeTab = null;
     this.objectTabs.forEach(tab => {
-      tab.classList.toggle('active', tab.dataset.objectId === objectId);
+      const isMatch = tab.dataset.objectId === objectId;
+      tab.classList.toggle('active', isMatch);
+      if (isMatch) activeTab = tab;
     });
+
+    // Smoothly center the active tab in the 5-item visible viewport ribbon
+    if (activeTab && this.labelsOverlay) {
+      const containerWidth = this.labelsOverlay.clientWidth;
+      const tabLeft = activeTab.offsetLeft;
+      const tabWidth = activeTab.offsetWidth;
+      const targetScroll = tabLeft - (containerWidth / 2) + (tabWidth / 2);
+
+      this.labelsOverlay.scrollTo({
+        left: Math.max(0, targetScroll),
+        behavior: 'smooth'
+      });
+    }
   }
 
   updateAllTexts(liters, objectId) {
@@ -380,8 +394,30 @@ class LipoRankApp {
       this.currentVolText.textContent = `${formattedL} L`;
     }
     if (this.cubeCountBadge) {
-      this.cubeCountBadge.textContent = `${cubeCount} 개 (높이 ${heightM}m)`;
+      this.cubeCountBadge.textContent = `${cubeCount} 개 (${formattedL}L = ${cubeCount}m³)`;
     }
+
+    // Update Clinical Surgery Equivalent Statistics (Body parts)
+    const abCases = Math.round(liters / 3.0); // 3,000cc
+    const thighCases = Math.round(liters / 2.5); // 2,500cc
+    const armCases = Math.round(liters / 1.0); // 1,000cc
+    const chinCases = Math.round(liters / 0.1); // 100cc
+
+    const equivSummary = document.getElementById('clinical-equiv-text');
+    if (equivSummary) {
+      equivSummary.textContent = `복부 대용량 약 ${abCases.toLocaleString()}회 / 허벅지 약 ${thighCases.toLocaleString()}회 집도 상당`;
+    }
+
+    const abEl = document.getElementById('ab-count-text');
+    const thighEl = document.getElementById('thigh-count-text');
+    const armEl = document.getElementById('arm-count-text');
+    const chinEl = document.getElementById('chin-count-text');
+
+    if (abEl) abEl.textContent = `약 ${abCases.toLocaleString()}회 집도분`;
+    if (thighEl) thighEl.textContent = `약 ${thighCases.toLocaleString()}회 집도분`;
+    if (armEl) armEl.textContent = `약 ${armCases.toLocaleString()}회 집도분`;
+    if (chinEl) chinEl.textContent = `약 ${chinCases.toLocaleString()}회 집도분`;
+
     if (this.centerHighlightAmount) {
       this.centerHighlightAmount.textContent = `${formattedL}L`;
     }

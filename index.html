@@ -145,7 +145,10 @@
             </div>
             
             <!-- Center Permanent Official SAMPLE Tower -->
-            <div id="center-highlight-tab" class="center-highlight-box" title="공인 1위 SAMPLE 원장 1m³ 큐브 탑">
+            <div id="center-highlight-tab" class="center-highlight-box" data-object-id="sample_tower" title="공인 1위 SAMPLE 원장 1m³ 큐브 탑">
+              <button class="btn-vis-toggle" data-vis-id="sample_tower" title="공인 탑 숨기기/보이기">
+                <i data-lucide="eye" class="icon-xs"></i>
+              </button>
               <div class="tag">공인 1위 SAMPLE 원장</div>
               <div id="center-highlight-amount" class="amount">4,820L</div>
               <div id="center-highlight-ratio" class="ratio-badge">4.82m 높이 돌파</div>
@@ -193,7 +196,7 @@
 
             <div class="object-label-tab" data-object-id="statue_of_liberty">
               <button class="btn-vis-toggle is-off" data-vis-id="statue_of_liberty" title="가시성 켜기/끄기">
-                <i data-lucide="eye-off" class="icon-xs"></i>
+                <i data-lucide="eye" class="icon-xs"></i>
               </button>
               <div class="label-title">자유의여신상</div>
               <div class="label-vol">1.5만L · 12m</div>
@@ -201,7 +204,7 @@
 
             <div class="object-label-tab" data-object-id="swimming_pool">
               <button class="btn-vis-toggle is-off" data-vis-id="swimming_pool" title="가시성 켜기/끄기">
-                <i data-lucide="eye-off" class="icon-xs"></i>
+                <i data-lucide="eye" class="icon-xs"></i>
               </button>
               <div class="label-title">올림픽수영장</div>
               <div class="label-vol">250만L · 20m</div>
@@ -254,13 +257,19 @@
         <div class="stage-bottom-strip">
           <div class="bottom-control-header">
             <div>
-              <span class="control-label">내 수술량 조절 (슬라이더 조절 시 앞쪽에 내 프리뷰 탑 즉시 생성)</span>
+              <span class="control-label">내 수술량 조절 (슬라이더 조절 시 3D 카메라가 내 큐브로 자동 줌인)</span>
               <div id="current-vol-text" class="vol-big-text">4,820 L</div>
             </div>
 
             <div class="bottom-cta-group">
+              <!-- Clinical Surgery Part Equivalent Badge -->
+              <div class="clinical-equiv-badge" id="clinical-equiv-badge" title="임상 기준 부위별 평균 환산">
+                <i data-lucide="activity" class="icon-xs"></i>
+                <span id="clinical-equiv-text">복부 대용량 약 1,607회 / 허벅지 약 1,928회 상당</span>
+              </div>
+
               <div class="unit-toggle">
-                <span class="unit-badge">1m³ 큐브 환산: <strong id="cube-count-badge">4.82 개 (높이 4.82m)</strong></span>
+                <span class="unit-badge">1m³ 큐브 환산: <strong id="cube-count-badge">4.82 개 (1,000L = 1m³)</strong></span>
               </div>
               
               <!-- Core CTA: 내 탑 등록하기 (Positioned prominent under 3D canvas) -->
@@ -281,6 +290,14 @@
             <button class="chip active" data-liters="4820">4,820L (1위 SAMPLE 원장)</button>
             <button class="chip" data-liters="7100">7,100L (사이버트럭 1대분)</button>
             <button class="chip" data-liters="15000">15,000L (자유의 여신상)</button>
+          </div>
+
+          <!-- Clinical Surgery Equivalent Guide Panel -->
+          <div class="clinical-info-strip">
+            <div class="clinical-pill"><span class="pill-dot abdomen"></span> 복부 360도 (평균 3,000cc): <strong id="ab-count-text">약 1,607회 집도분</strong></div>
+            <div class="clinical-pill"><span class="pill-dot thigh"></span> 허벅지 전체 (평균 2,500cc): <strong id="thigh-count-text">약 1,928회 집도분</strong></div>
+            <div class="clinical-pill"><span class="pill-dot arm"></span> 팔뚝/부유방 (평균 1,000cc): <strong id="arm-count-text">약 4,820회 집도분</strong></div>
+            <div class="clinical-pill"><span class="pill-dot chin"></span> 이중턱/얼굴 (평균 100cc): <strong id="chin-count-text">약 48,200회 집도분</strong></div>
           </div>
         </div>
 
@@ -448,26 +465,122 @@
       </div>
     </section>
 
-    <!-- ==================== TAB 5: COMMUNITY VIEW ==================== -->
+    <!-- ==================== TAB 5: COMMUNITY VIEW (강남언니/바비톡 스타일) ==================== -->
     <section id="view-community" class="tab-view">
       <div class="subpage-header">
-        <h2 class="subpage-title">전문의 수술 케이스 포럼 & Q&A</h2>
-        <p class="subpage-desc">집도의와 환자가 나누는 정밀 흡입 노하우와 회복 이야기</p>
+        <h2 class="subpage-title">리포 커뮤니티 (자유 · 정보 · 후기)</h2>
+        <p class="subpage-desc">실제 시술 전후 후기, 부위별 용량 팩트체크, 전문의 Q&A 실시간 소통 광장</p>
       </div>
 
-      <div class="community-list">
-        <div class="post-card">
-          <span class="post-tag">수술 케이스 분석</span>
-          <h4 class="post-title">복부 4,800cc 대용량 흡입 시 순수 지방률 90% 달성 노하우 (SAMPLE 원장 집도 분석)</h4>
-          <p class="post-desc">투메슨트 비율 1:1.1 균일 침윤법과 심부 지방층 정밀 타겟팅으로 출혈 최소화 및 빠른 회복을 도모한 케이스 고찰입니다.</p>
-          <div class="post-meta">작성자: LipoRank 학술분과 · 2026-11-08 · 조회수 1,420</div>
+      <!-- Community Sub-navigation & Sorting Tabs -->
+      <div class="community-control-panel">
+        <div class="community-board-tabs">
+          <button class="comm-tab active" data-board="all">전체</button>
+          <button class="comm-tab" data-board="free">자유게시판</button>
+          <button class="comm-tab" data-board="info">정보/용량 팁</button>
+          <button class="comm-tab" data-board="review">전후 리얼후기</button>
+          <button class="comm-tab" data-board="qa">의사 답변 Q&A</button>
         </div>
 
-        <div class="post-card">
-          <span class="post-tag">전문의 실시간 Q&A</span>
-          <h4 class="post-title">사이버트럭 1대분(7,100L)의 지방을 흡입하기까지 몇 건의 집도가 필요한가요?</h4>
-          <p class="post-desc">평균 1인 흡입량 2,400cc 기준 약 2,900례 이상의 임상 수술이 축적되어야 도달 가능한 마일스톤입니다.</p>
-          <div class="post-meta">답변: 공인 검증의사단 · 2026-11-05 · 답변 8개</div>
+        <div class="community-filter-group">
+          <div class="sort-pills">
+            <button class="sort-btn active" data-period="daily">일간 인기</button>
+            <button class="sort-btn" data-period="weekly">주간 베스트</button>
+            <button class="sort-btn" data-period="monthly">월간 명예전당</button>
+          </div>
+          <button class="btn-write-post" onclick="alert('글쓰기: 로그인 후 이용 가능합니다.')">
+            <i data-lucide="edit-3" class="icon-sm"></i>
+            <span>글쓰기</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Realtime Hot Topic Banner (GangnamUnni Style) -->
+      <div class="comm-hot-ticker">
+        <span class="ticker-badge"><i data-lucide="flame" class="icon-xs"></i> 실시간 HOT</span>
+        <span class="ticker-text">"복부 3,500cc 뽑고 3주차 허리둘레 -8cm 솔직 붓기 변화 과정 (사진有)"</span>
+      </div>
+
+      <div class="community-list" id="community-post-list">
+        <!-- Injected via app.js / static realistic cards -->
+        <div class="post-card hot" data-board="review">
+          <div class="post-header-line">
+            <span class="post-tag review">리얼후기</span>
+            <span class="post-clinic-tag">강남 · SAMPLE 성형외과</span>
+            <span class="post-rank-tag"><i data-lucide="award" class="icon-xs"></i> 주간 1위</span>
+          </div>
+          <h4 class="post-title">[전후비교] 허벅지 360도 4,200cc 흡입 1달차 멍/붓기 솔직 후기 (키 163 / 58kg → 49kg)</h4>
+          <p class="post-desc">지방흡입 처음이라 순수 지방량이 뭔지도 몰랐는데 원장님이 1m³ 큐브로 얼마나 빠진 건지 보여주셔서 바로 체감됐어요. 승마살이랑 안쪽살 라인 정리된 거 사진 올려요!</p>
+          <div class="post-meta-row">
+            <div class="author-info">
+              <span class="author-name">슬림하게살자</span>
+              <span class="post-time">2시간 전</span>
+            </div>
+            <div class="post-stats">
+              <span><i data-lucide="eye" class="icon-xs"></i> 4,812</span>
+              <span><i data-lucide="heart" class="icon-xs"></i> 324</span>
+              <span><i data-lucide="message-square" class="icon-xs"></i> 58</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="post-card" data-board="info">
+          <div class="post-header-line">
+            <span class="post-tag info">정보/팁</span>
+            <span class="post-rank-tag"><i data-lucide="trending-up" class="icon-xs"></i> 일간 인기</span>
+          </div>
+          <h4 class="post-title">복부 흡입할 때 '총 흡입량'에 속지 마세요. 병원 차트에서 '순수 지방량(Pure Fat)' 확인하는 법</h4>
+          <p class="post-desc">수술 후 3,000cc 뽑았다고 좋아했는데 알고보니 투메슨트 마취수액이 2,000cc고 실제 지방은 1,000cc인 경우 많습니다. 큐브 부피로 정확히 팩트체크하는 꿀팁 정리했습니다.</p>
+          <div class="post-meta-row">
+            <div class="author-info">
+              <span class="author-name">지흡전문팩터</span>
+              <span class="post-time">5시간 전</span>
+            </div>
+            <div class="post-stats">
+              <span><i data-lucide="eye" class="icon-xs"></i> 3,219</span>
+              <span><i data-lucide="heart" class="icon-xs"></i> 218</span>
+              <span><i data-lucide="message-square" class="icon-xs"></i> 42</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="post-card" data-board="qa">
+          <div class="post-header-line">
+            <span class="post-tag qa">의사 Q&A</span>
+            <span class="post-cert-tag"><i data-lucide="check-circle" class="icon-xs"></i> 공인의 답변완료</span>
+          </div>
+          <h4 class="post-title">[전문의 답변] 팔뚝/부유방 1,200cc 흡입 후 압박복 착용 기간과 바이오본드(뭉침) 관리법</h4>
+          <p class="post-desc">Q: 수술 후 2주차인데 딱딱하게 뭉치는 바이오본드가 생겼어요. 이거 언제 풀리나요? / A(공인 전문의): 3~4주차부터 림프 순환 고주파 관리 병행 시 자연스럽게 흡수됩니다.</p>
+          <div class="post-meta-row">
+            <div class="author-info">
+              <span class="author-name">도토리묵</span>
+              <span class="post-time">어제</span>
+            </div>
+            <div class="post-stats">
+              <span><i data-lucide="eye" class="icon-xs"></i> 1,890</span>
+              <span><i data-lucide="heart" class="icon-xs"></i> 95</span>
+              <span><i data-lucide="message-square" class="icon-xs"></i> 16</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="post-card" data-board="free">
+          <div class="post-header-line">
+            <span class="post-tag free">자유토크</span>
+          </div>
+          <h4 class="post-title">사이버트럭 1대분(7,100L) 흡입한 원장님 탑 보니까 진짜 압도적이네요 ㅋㅋㅋ</h4>
+          <p class="post-desc">메인 홈에서 3D로 사이버트럭이랑 나란히 세워진 큐브 탑 봤는데 환자 몇 명을 수술해야 저 부피가 나오는 건가요? 1L가 0.9kg니까 6톤이 넘는 지방... 대단하긴 하네요.</p>
+          <div class="post-meta-row">
+            <div class="author-info">
+              <span class="author-name">다이어터3년차</span>
+              <span class="post-time">2일 전</span>
+            </div>
+            <div class="post-stats">
+              <span><i data-lucide="eye" class="icon-xs"></i> 2,450</span>
+              <span><i data-lucide="heart" class="icon-xs"></i> 180</span>
+              <span><i data-lucide="message-square" class="icon-xs"></i> 34</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
