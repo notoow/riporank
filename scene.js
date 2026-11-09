@@ -1,7 +1,8 @@
 /**
  * LipoRank High-Fidelity 3D Scene
- * Loads Real GLB Models (Fiji Bottle, Olympic Pool, Barrel/Fluid, Lamborghini, Cybertruck, Cow)
- * Pristine White Studio Backdrop, Smooth Shadows & Floating Labels
+ * Lineup Layout (Exact Match to User Reference Image):
+ * [Fiji Water] -- [Olympic Pool] -- [CENTER CAN JAR] -- [Lamborghini] -- [Cybertruck]
+ * Perfectly Oriented Three-Quarter Angles, Clean Studio Lighting & Contact Shadows
  */
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
@@ -21,8 +22,8 @@ export class LipoRankScene {
     this.init();
     this.initLights();
     this.initStudioFloor();
-    this.initCenterFatContainer();
-    this.loadRealGLBModels();
+    this.initCenterFatJar();
+    this.loadLineupModels();
     this.initControls();
     this.initEvents();
     this.animate();
@@ -30,16 +31,16 @@ export class LipoRankScene {
 
   init() {
     this.scene = new THREE.Scene();
-    // Ultra Clean Pristine White Studio Fog & Background (Exact Match to Mockup)
-    this.scene.background = new THREE.Color(0xfbfcfe);
-    this.scene.fog = new THREE.FogExp2(0xfbfcfe, 0.02);
+    // Ultra Clean Pure White Studio Fog & Background
+    this.scene.background = new THREE.Color(0xfcfdfe);
+    this.scene.fog = new THREE.FogExp2(0xfcfdfe, 0.018);
 
     const width = this.container.clientWidth || window.innerWidth;
     const height = this.container.clientHeight || window.innerHeight;
 
-    this.camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
-    // Adjusted camera for wide studio lineup view
-    this.camera.position.set(0, 2.2, 7.5);
+    // Perspective matching reference screenshot (front-parallel wide camera)
+    this.camera = new THREE.PerspectiveCamera(35, width / height, 0.1, 100);
+    this.camera.position.set(0, 1.25, 5.5);
 
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -51,68 +52,63 @@ export class LipoRankScene {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.toneMappingExposure = 1.08;
 
     this.container.appendChild(this.renderer.domElement);
     this.clock = new THREE.Clock();
   }
 
   initLights() {
-    // Soft high-key studio hemisphere ambient
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xf1f5f9, 1.4);
+    // Soft high-key ambient studio light
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xf1f5f9, 1.6);
     this.scene.add(hemiLight);
 
-    // Key directional light for crisp clean contact shadows
-    this.mainLight = new THREE.DirectionalLight(0xffffff, 2.0);
-    this.mainLight.position.set(6, 12, 8);
+    // Main key light from top-front-right for natural soft floor shadows
+    this.mainLight = new THREE.DirectionalLight(0xffffff, 2.2);
+    this.mainLight.position.set(5, 12, 7);
     this.mainLight.castShadow = true;
     this.mainLight.shadow.mapSize.width = 2048;
     this.mainLight.shadow.mapSize.height = 2048;
     this.mainLight.shadow.camera.near = 0.5;
-    this.mainLight.shadow.camera.far = 30;
-    this.mainLight.shadow.camera.left = -8;
-    this.mainLight.shadow.camera.right = 8;
-    this.mainLight.shadow.camera.top = 8;
-    this.mainLight.shadow.camera.bottom = -4;
+    this.mainLight.shadow.camera.far = 25;
+    this.mainLight.shadow.camera.left = -6;
+    this.mainLight.shadow.camera.right = 6;
+    this.mainLight.shadow.camera.top = 6;
+    this.mainLight.shadow.camera.bottom = -3;
     this.mainLight.shadow.bias = -0.0001;
     this.scene.add(this.mainLight);
 
-    // Subtle soft fill light from opposite side
-    const fillLight = new THREE.DirectionalLight(0xe0f2fe, 0.8);
-    fillLight.position.set(-8, 6, -4);
+    // Fill light from left to soften car contours
+    const fillLight = new THREE.DirectionalLight(0xf1f5f9, 1.0);
+    fillLight.position.set(-6, 6, 4);
     this.scene.add(fillLight);
 
-    // Warm amber backlight to make the fat fluid glow
-    const amberBacklight = new THREE.PointLight(0xf59e0b, 1.2, 8);
-    amberBacklight.position.set(0, 1.5, -1.8);
-    this.scene.add(amberBacklight);
+    // Warm glow point light behind the central fat jar
+    const jarBackGlow = new THREE.PointLight(0xf59e0b, 1.4, 5);
+    jarBackGlow.position.set(0, 0.9, -1.2);
+    this.scene.add(jarBackGlow);
   }
 
   initStudioFloor() {
-    // Pure white studio infinite plane with soft shadow catching
-    const floorGeo = new THREE.PlaneGeometry(60, 60);
-    const floorMat = new THREE.ShadowMaterial({
-      opacity: 0.12
-    });
+    // Pure White Seamless Studio Floor
+    const floorGeo = new THREE.PlaneGeometry(50, 50);
+    const floorMat = new THREE.ShadowMaterial({ opacity: 0.14 });
     const shadowFloor = new THREE.Mesh(floorGeo, floorMat);
     shadowFloor.rotation.x = -Math.PI / 2;
     shadowFloor.position.y = 0;
     shadowFloor.receiveShadow = true;
     this.scene.add(shadowFloor);
 
-    // Base White Surface
-    const baseFloorGeo = new THREE.PlaneGeometry(60, 60);
-    const baseFloorMat = new THREE.MeshBasicMaterial({
-      color: 0xfbfcfe
-    });
-    const baseFloor = new THREE.Mesh(baseFloorGeo, baseFloorMat);
+    // Base background plate
+    const baseMat = new THREE.MeshBasicMaterial({ color: 0xfcfdfe });
+    const baseFloor = new THREE.Mesh(floorGeo, baseMat);
     baseFloor.rotation.x = -Math.PI / 2;
     baseFloor.position.y = -0.002;
     this.scene.add(baseFloor);
   }
 
-  initCenterFatContainer() {
-    // Center Beaker / Jar with Sloshing Liquid
+  initCenterFatJar() {
+    // Central Aluminum-Lid Glass Can Jar with Golden Fat & Sloshing
     this.fatSystem = new FatFluidSystem(this.scene, {
       maxLiters: 5000,
       initialLiters: this.selectedLiters
@@ -120,47 +116,46 @@ export class LipoRankScene {
     this.fatSystem.group.position.set(0, 0, 0);
   }
 
-  loadRealGLBModels() {
+  loadLineupModels() {
     this.modelsGroup = new THREE.Group();
     this.scene.add(this.modelsGroup);
 
-    // Lineup Layout (Exact arrangement from user's reference images):
-    // [Water Bottle] --- [Olympic Pool] --- [CENTER FAT BEAKER] --- [Lamborghini] --- [Cybertruck] --- [Cow]
+    // Exact Lineup Configurations (Matching User Reference Image):
+    // 1. Fiji Water (Leftmost)
+    // 2. Olympic Pool (Left-Mid, perspective)
+    // 3. Center Fat Jar (Center at x=0)
+    // 4. Lamborghini LP670 (Right-Mid, front angled towards camera)
+    // 5. Cybertruck (Rightmost, front angled towards camera)
     const modelConfigs = [
       {
         id: 'fiji_bottle',
         path: './assets/models/fiji_water_bottle.glb',
-        targetHeight: 0.9,
-        position: [-3.8, 0, 0.6],
-        rotation: [0, 0.2, 0]
+        targetHeight: 0.92,
+        position: [-2.85, 0, 0.05],
+        rotation: [0, 0.15, 0]
       },
       {
         id: 'swimming_pool',
         path: './assets/models/swimming_pool_343.glb',
-        targetWidth: 2.4,
-        position: [-2.1, 0, -0.2],
-        rotation: [0, 0, 0]
+        targetWidth: 1.75,
+        position: [-1.45, 0, -0.05],
+        rotation: [0, -0.20, 0] // Perspective showing front steps
       },
       {
         id: 'lamborghini',
         path: './assets/models/lambo_lp670.glb',
-        targetLength: 2.2,
-        position: [1.8, 0, 0.2],
-        rotation: [0, -0.35, 0]
+        targetLength: 1.85,
+        position: [1.25, 0, 0.05],
+        // Facing front-three-quarter towards camera (Front headlights visible)
+        rotation: [0, Math.PI * 0.26, 0]
       },
       {
         id: 'cybertruck',
         path: './assets/models/Cyber_truck.glb',
-        targetLength: 2.4,
-        position: [3.8, 0, -0.2],
-        rotation: [0, -0.2, 0]
-      },
-      {
-        id: 'cow',
-        path: './assets/models/cow.glb',
-        targetHeight: 1.2,
-        position: [5.6, 0, -0.5],
-        rotation: [0, -0.4, 0]
+        targetLength: 2.15,
+        position: [2.95, 0, 0.0],
+        // Facing front-three-quarter towards camera (Front lightbar visible)
+        rotation: [0, Math.PI * 0.28, 0]
       }
     ];
 
@@ -170,18 +165,14 @@ export class LipoRankScene {
         gltf => {
           const root = gltf.scene;
 
-          // Enable shadows and enhance materials
           root.traverse(child => {
             if (child.isMesh) {
               child.castShadow = true;
               child.receiveShadow = true;
-              if (child.material) {
-                child.material.envMapIntensity = 1.0;
-              }
             }
           });
 
-          // Normalize size using Box3
+          // Normalize Scale
           const box = new THREE.Box3().setFromObject(root);
           const size = box.getSize(new THREE.Vector3());
 
@@ -196,7 +187,7 @@ export class LipoRankScene {
 
           root.scale.setScalar(scale);
 
-          // Re-compute bounding box after scale to ground it at y = 0
+          // Ground to y = 0
           box.setFromObject(root);
           root.position.set(
             cfg.position[0],
@@ -212,9 +203,7 @@ export class LipoRankScene {
           this.models[cfg.id] = root;
         },
         undefined,
-        err => {
-          console.warn(`Could not load GLB ${cfg.path}, fallback to procedural`, err);
-        }
+        err => console.warn(`Model load error for ${cfg.path}`, err)
       );
     });
   }
@@ -222,18 +211,16 @@ export class LipoRankScene {
   initControls() {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
-    this.controls.dampingFactor = 0.05;
-    this.controls.minDistance = 3.0;
-    this.controls.maxDistance = 18.0;
-    this.controls.maxPolarAngle = Math.PI / 2 - 0.02; // Keep above floor
+    this.controls.dampingFactor = 0.06;
+    this.controls.minDistance = 3.5;
+    this.controls.maxDistance = 14.0;
+    this.controls.maxPolarAngle = Math.PI / 2 - 0.02;
     this.controls.minPolarAngle = 0.2;
-    this.controls.target.set(0, 1.0, 0);
+    this.controls.target.set(0, 0.75, 0);
   }
 
   initEvents() {
     window.addEventListener('resize', () => this.onWindowResize());
-
-    // Slosh beaker on canvas click
     this.container.addEventListener('pointerdown', () => {
       if (this.fatSystem) {
         this.fatSystem.triggerSlosh(0.06);
@@ -264,13 +251,13 @@ export class LipoRankScene {
   toggleAutoRotate() {
     this.isAutoRotate = !this.isAutoRotate;
     this.controls.autoRotate = this.isAutoRotate;
-    this.controls.autoRotateSpeed = 1.0;
+    this.controls.autoRotateSpeed = 0.8;
     return this.isAutoRotate;
   }
 
   resetCamera() {
-    this.camera.position.set(0, 2.2, 7.5);
-    this.controls.target.set(0, 1.0, 0);
+    this.camera.position.set(0, 1.35, 6.2);
+    this.controls.target.set(0, 0.75, 0);
     this.controls.update();
   }
 

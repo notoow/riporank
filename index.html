@@ -8,11 +8,6 @@
   <meta name="description" content="병원 CRM 차트 및 의사면허 공인 검증 전세계 지방흡입 수술량 랭킹 플랫폼. 3D 볼륨 비교 및 내 랭크 등록">
   <link rel="canonical" href="https://mini-sites-hub.web.app/">
 
-  <!-- Open Graph -->
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="LipoRank - 지방흡입 전문의 공인 랭킹">
-  <meta property="og:description" content="실제 3D 모델로 체감하는 지방흡입량 비교 및 전문의 랭킹">
-
   <link rel="stylesheet" href="styles.css">
 
   <!-- Three.js Importmap -->
@@ -30,7 +25,7 @@
 </head>
 <body>
 
-  <!-- 1. Header (Exact Match to User Mockup 3) -->
+  <!-- 1. Header (Exact Match to User Reference Mockup 3) -->
   <header class="site-header">
     <div class="header-container">
       
@@ -79,83 +74,63 @@
     </div>
   </header>
 
-  <!-- 2. Main Page Layout (Full Width Clean View) -->
+  <!-- 2. Main Page Layout (Pure Clean Studio) -->
   <main class="page-wrap">
     
     <!-- 3D Stage Card -->
     <div class="stage-card">
       
-      <!-- Top Stage Bar -->
-      <div class="stage-top-bar">
-        <div>
-          <h1 id="stage-title" class="stage-headline">3,000ml의 지방을 3D로 비교해보세요</h1>
-          <p class="stage-sub">실제 사물과 비교하여 지방의 양을 가늠해보세요.</p>
-        </div>
-
-        <div class="stage-actions">
-          <div class="unit-capsule">
-            <button class="unit-tab active" data-unit="ml">ml</button>
-            <button class="unit-tab" data-unit="L">L</button>
-          </div>
-          <button class="btn-share" onclick="alert('링크가 복사되었습니다.')">
-            <i data-lucide="share-2" class="icon-sm"></i>
-            <span>공유하기</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- 3D Canvas Viewport with Overlays -->
+      <!-- 3D Canvas Viewport with Overlays (Clean Lineup) -->
       <div class="viewport-wrapper">
         
-        <!-- Left Floating Control Buttons -->
-        <div class="stage-floating-btns">
-          <button id="btn-rotate" class="stage-btn" title="자동 360도 회전">
-            <i data-lucide="orbit"></i>
-            <span>자동 회전</span>
-          </button>
-          <button id="btn-reset" class="stage-btn" title="시점 초기화">
-            <i data-lucide="rotate-ccw"></i>
-            <span>초기화</span>
-          </button>
-          <button id="btn-pour" class="stage-btn" title="지방이 콸콸 차오르는 애니메이션">
-            <i data-lucide="droplets" style="color: #f59e0b;"></i>
-            <span>지방 채우기</span>
-          </button>
-        </div>
+        <!-- Carousel Nav Buttons (Exact match to Mockup 1) -->
+        <button class="carousel-arrow prev" title="이전">
+          <i data-lucide="chevron-left"></i>
+        </button>
+        <button class="carousel-arrow next" title="다음">
+          <i data-lucide="chevron-right"></i>
+        </button>
 
-        <!-- Floating Labels on Top of Models (Exact Mockup 1 & 2 Layout) -->
+        <!-- Floating Labels on Top of Models (Exact 5 Items) -->
         <div class="stage-labels-overlay">
-          <div class="object-label" style="margin-left: 20px;">
+          <div class="object-label">
             <div class="label-title">생수병</div>
             <div class="label-vol">500ml</div>
           </div>
-          <div class="object-label" style="margin-left: 40px;">
+
+          <div class="object-label">
             <div class="label-title">올림픽 수영장</div>
             <div class="label-vol">2,500,000ml</div>
           </div>
           
-          <!-- Center Box -->
+          <!-- Center Purple Box -->
           <div class="center-highlight-box">
             <div class="tag">지방흡입</div>
             <div id="center-highlight-amount" class="amount">3,000ml</div>
           </div>
 
-          <div class="object-label" style="margin-right: 40px;">
+          <div class="object-label">
             <div class="label-title">람보르기니 우라칸</div>
             <div class="label-vol">5,200,000ml</div>
           </div>
-          <div class="object-label" style="margin-right: 20px;">
+
+          <div class="object-label">
             <div class="label-title">사이버트럭</div>
             <div class="label-vol">7,100,000ml</div>
-          </div>
-          <div class="object-label">
-            <div class="label-title">소 한 마리</div>
-            <div class="label-vol">300,000ml</div>
           </div>
         </div>
 
         <!-- Three.js Canvas Container -->
         <div id="canvas-container"></div>
+
+        <!-- Carousel Bottom Dots Indicator (Mockup 1) -->
+        <div class="carousel-dots">
+          <span class="dot active"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </div>
       </div>
 
       <!-- Bottom Slider & Presets Strip -->
@@ -186,16 +161,7 @@
 
     </div>
 
-    <!-- 3. Comparison Cards Grid -->
-    <section class="comparison-section">
-      <h3 class="sec-title">사물 크기와 직관적 비교</h3>
-      <p class="sec-desc">내가 선택한 흡입량이 일상 사물이나 탈것과 비교해 얼마나 거대한 양인지 체감해보세요.</p>
-      <div id="objects-grid" class="cards-grid">
-        <!-- Injected via app.js -->
-      </div>
-    </section>
-
-    <!-- 4. Doctor Leaderboard Section -->
+    <!-- 3. Doctor Leaderboard Section (Single Verified Record like admerest) -->
     <section id="leaderboard-section" class="leaderboard-wrap">
       <div class="table-header-row">
         <div>
@@ -227,7 +193,7 @@
 
   </main>
 
-  <!-- 5. Modal: 내 랭크 등록하기 -->
+  <!-- 4. Modal: 내 랭크 등록하기 -->
   <div id="register-modal" class="modal-overlay">
     <div class="modal-box">
       <button id="modal-close" class="modal-close-btn">
