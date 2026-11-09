@@ -1524,6 +1524,182 @@ body {
 }
 .form-group input:focus, .form-group select:focus { border-color: var(--primary); }
 /* 14. Private Registered Tower UI & Sleek Notification */
+.table-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.toggle-verified-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.toggle-verified-wrapper:hover {
+  border-color: #0953ff;
+  background: #eff6ff;
+}
+
+.toggle-checkbox {
+  display: none;
+}
+
+.toggle-custom {
+  position: relative;
+  width: 32px;
+  height: 18px;
+  background: #cbd5e1;
+  border-radius: 20px;
+  transition: background 0.2s ease;
+}
+
+.toggle-custom::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.toggle-checkbox:checked + .toggle-custom {
+  background: #0953ff;
+}
+
+.toggle-checkbox:checked + .toggle-custom::after {
+  transform: translateX(14px);
+}
+
+.toggle-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #1e293b;
+}
+
+.doc-profile-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+}
+
+.doc-avatar-wrap {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+}
+
+.doc-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.avatar-verified-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  background: #0953ff;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(9, 83, 255, 0.4);
+}
+
+.avatar-unverified-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  background: #64748b;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffffff;
+}
+
+.my-rank-row {
+  background: rgba(239, 246, 255, 0.65) !important;
+  border-left: 3px solid #0953ff;
+}
+
+.btn-edit-rank-info {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 6px;
+  transition: all 0.15s;
+}
+
+.btn-edit-rank-info:hover {
+  background: #eff6ff;
+  border-color: #0953ff;
+  color: #0953ff;
+}
+
+.badge-tag-pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #b45309;
+  background: #fef3c7;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.btn-row-verify {
+  background: #0953ff;
+  color: white;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-left: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
 .private-status-pill {
   display: inline-flex;
   align-items: center;

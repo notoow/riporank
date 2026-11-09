@@ -322,13 +322,21 @@
       <div class="home-leaderboard-preview">
         <div class="table-header-row">
           <div>
-            <h3 class="sec-title">공인 지방흡입 집도의 실적 순위표</h3>
+            <h3 class="sec-title">지방흡입 집도의 실적 순위표</h3>
             <p class="sec-desc">병원 EMR 전자차트 및 순수 지방량(Pure Fat Volume) 기준 공식 공증 랭킹</p>
           </div>
-          <a href="#ranking" class="link-more-ranking" data-nav="ranking">
-            <span>전체 순위표 보기</span>
-            <i data-lucide="arrow-right" class="icon-sm"></i>
-          </a>
+          <div class="table-header-actions">
+            <!-- Toggle: Only Verified Doctors -->
+            <label class="toggle-verified-wrapper" title="공인 EMR 인증을 통과한 의사만 필터링">
+              <input type="checkbox" id="chk-verified-only-home" class="toggle-checkbox">
+              <span class="toggle-custom"></span>
+              <span class="toggle-text"><i data-lucide="shield-check" class="icon-xs"></i> 인증 의사만 보기</span>
+            </label>
+            <a href="#ranking" class="link-more-ranking" data-nav="ranking">
+              <span>전체 순위표 보기</span>
+              <i data-lucide="arrow-right" class="icon-sm"></i>
+            </a>
+          </div>
         </div>
 
         <!-- User's Private Registered Tower Banner with [인증받기] CTA -->
@@ -362,7 +370,6 @@
               <th>총 누적 흡입량</th>
               <th>1인 평균 / 순수지방률</th>
               <th>공인 검증 상태</th>
-              <th style="width: 150px;">3D 체급 연동</th>
             </tr>
           </thead>
           <tbody id="home-doctors-table-body">
@@ -375,9 +382,16 @@
 
     <!-- ==================== TAB 2: DOCTOR RANKING VIEW ==================== -->
     <section id="view-ranking" class="tab-view">
-      <div class="subpage-header">
-        <h2 class="subpage-title">2026 글로벌 지방흡입 전문의 공식 순위표</h2>
-        <p class="subpage-desc">보건복지부 면허 공인 및 병의원 EMR/CRM 전자차트 기반 검증 리더보드</p>
+      <div class="subpage-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;">
+        <div>
+          <h2 class="subpage-title">2026 글로벌 지방흡입 전문의 공식 순위표</h2>
+          <p class="subpage-desc">보건복지부 면허 공인 및 병의원 EMR/CRM 전자차트 기반 검증 리더보드</p>
+        </div>
+        <label class="toggle-verified-wrapper" title="공인 EMR 인증을 통과한 의사만 필터링">
+          <input type="checkbox" id="chk-verified-only-full" class="toggle-checkbox">
+          <span class="toggle-custom"></span>
+          <span class="toggle-text"><i data-lucide="shield-check" class="icon-xs"></i> 인증 의사만 보기</span>
+        </label>
       </div>
 
       <div class="ranking-filter-bar">
@@ -398,7 +412,6 @@
               <th>총 누적 흡입량</th>
               <th>1인 평균 / 순수지방률</th>
               <th>공인 검증 상태</th>
-              <th style="width: 150px;">3D 탑 바로보기</th>
             </tr>
           </thead>
           <tbody id="full-doctors-table-body">
@@ -673,6 +686,83 @@
 
         <button type="submit" class="btn-modal-submit">
           내 3D 큐브 탑 씬에 등록하기
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. Modal: 로그인 / 회원가입 유도 -->
+  <div id="login-modal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 440px;">
+      <button id="login-modal-close" class="modal-close-btn" title="닫기">
+        <i data-lucide="x"></i>
+      </button>
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="width: 52px; height: 52px; border-radius: 16px; background: #eff6ff; color: #0953ff; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+          <i data-lucide="user-check" class="icon-lg"></i>
+        </div>
+        <h3 style="font-size: 20px; font-weight: 900; margin-bottom: 6px;">의사 회원 로그인</h3>
+        <p style="font-size: 13px; color: #64748b;">
+          랭크 표의 집도의 성함 및 소속 병원 정보를 수정하고 관리하려면 로그인이 필요합니다.
+        </p>
+      </div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label>의사 아이디 / 이메일</label>
+          <input type="text" id="login-id" placeholder="doctor@clinic.com" value="doctor_kim" required>
+        </div>
+        <div class="form-group">
+          <label>비밀번호</label>
+          <input type="password" id="login-pw" placeholder="••••••••" value="123456" required>
+        </div>
+        <button type="submit" class="btn-modal-submit" style="margin-top: 16px;">
+          로그인하고 정보 수정하기
+        </button>
+        <p style="text-align: center; font-size: 11px; color: #94a3b8; margin-top: 14px;">
+          테스트 계정으로 자동 입력되어 바로 로그인하실 수 있습니다.
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <!-- 6. Modal: 랭크 표 내 정보 수정 (로그인 후) -->
+  <div id="edit-profile-modal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 480px;">
+      <button id="edit-profile-close" class="modal-close-btn" title="닫기">
+        <i data-lucide="x"></i>
+      </button>
+      <div style="margin-bottom: 20px;">
+        <div class="reg-badge-row" style="margin-bottom: 8px;">
+          <span class="badge-my-tower">내 랭킹 프로필</span>
+          <span class="tag-unverified" id="edit-status-badge">공인 인증 대기중</span>
+        </div>
+        <h3 style="font-size: 20px; font-weight: 900; margin-bottom: 6px;">집도의 정보 및 병원 수정</h3>
+        <p style="font-size: 12px; color: #64748b;">
+          랭크 표에 노출될 이름과 병원명을 수정합니다. 수정 후 공인 EMR 인증을 통과하면 3D 캔버스에 탑이 영구 등재됩니다.
+        </p>
+      </div>
+
+      <form id="edit-profile-form">
+        <div class="form-group">
+          <label>집도의 성함 *</label>
+          <input type="text" id="edit-doc-name" placeholder="예: 김민우 원장" required>
+        </div>
+        <div class="form-group">
+          <label>소속 병의원명 *</label>
+          <input type="text" id="edit-doc-clinic" placeholder="예: 비너스의원 강남본점" required>
+        </div>
+        <div class="form-group">
+          <label>보건복지부 의사면허 번호 *</label>
+          <input type="text" id="edit-doc-license" placeholder="예: 제64920호" required>
+        </div>
+        <div class="form-group">
+          <label>주요 특화 부위</label>
+          <input type="text" id="edit-doc-specialty" placeholder="예: 복부/러브핸들 대용량" required>
+        </div>
+
+        <button type="submit" class="btn-modal-submit" style="margin-top: 16px;">
+          정보 저장 및 랭크표 반영
         </button>
       </form>
     </div>

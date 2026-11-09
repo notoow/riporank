@@ -3,8 +3,9 @@
  * Handles SPA navigation, Real-World Physical Scale 3D Scene,
  * Front-Stage Preview Tower, Animated Slide Registration, and Audit Verification Flow
  */
+import * as THREE from 'three';
 import { LipoRankScene } from './scene.js';
-import { getDoctors, getMyPendingTower, submitDoctorApplication } from './ranking-store.js';
+import { getDoctors, getMyPendingTower, submitDoctorApplication, getCurrentUser, setCurrentUser, saveMyTower } from './ranking-store.js';
 import { COMPARISON_OBJECTS } from './objects-data.js';
 
 class LipoRankApp {
@@ -13,6 +14,8 @@ class LipoRankApp {
     this.activeDoctor = getDoctors()[0];
     this.doctors = getDoctors();
     this.myPendingTower = getMyPendingTower();
+    this.currentUser = getCurrentUser();
+    this.onlyVerifiedFilter = false;
 
     this.initElements();
     this.initNavigation();
@@ -20,6 +23,7 @@ class LipoRankApp {
     this.initUIEvents();
     this.renderLeaderboards();
     this.renderMyRegisteredBanner();
+    this.updateAuthButtonUI();
     this.updateAllTexts(this.currentLiters, this.scene.activeObjectId);
     this.refreshIcons();
   }
@@ -82,6 +86,20 @@ class LipoRankApp {
     this.auditStatusTag = document.getElementById('audit-status-tag');
     this.privateTowerPill = document.getElementById('private-tower-pill');
     this.btnPillVerify = document.getElementById('btn-pill-verify');
+
+    // Modals: Login & Edit Profile
+    this.btnAuth = document.querySelector('.btn-auth');
+    this.loginModal = document.getElementById('login-modal');
+    this.loginModalClose = document.getElementById('login-modal-close');
+    this.loginForm = document.getElementById('login-form');
+
+    this.editProfileModal = document.getElementById('edit-profile-modal');
+    this.editProfileClose = document.getElementById('edit-profile-close');
+    this.editProfileForm = document.getElementById('edit-profile-form');
+
+    // Verified Doctor Only Toggles
+    this.chkVdrHome = document.getElementById('chk-verified-only-home');
+    this.chkVdrFull = document.getElementById('chk-verified-only-full');
   }
 
   initNavigation() {
@@ -116,37 +134,52 @@ class LipoRankApp {
       });
     });
 
-    window.addEventListener('hashchange', () => {
+    window.addEventListener('popstate', () => {
       const hash = window.location.hash.replace('#', '') || 'home';
       switchTab(hash);
     });
 
-    const initialHash = window.location.hash.replace('#', '') || 'home';
-    switchTab(initialHash);
+    if (window.location.hash) {
+      const hash = window.location.hash.replace('#', '');
+      switchTab(hash);
+    }
   }
 
   init3DScene() {
+    if (!this.canvasContainer) return;
+
     this.scene = new LipoRankScene(this.canvasContainer, {
       initialLiters: this.currentLiters,
-      onVolumeChange: liters => {
+      onVolumeChange: (liters) => {
+        this.currentLiters = liters;
+        if (this.volSlider) this.volSlider.value = liters;
         this.updateAllTexts(liters, this.scene.activeObjectId);
       },
-      onObjectChange: objectId => {
-        this.updateObjectTabs(objectId);
+      onObjectChange: (objectId) => {
         this.updateAllTexts(this.currentLiters, objectId);
-        if (this.scene.cameraMode === 'giant') {
-          this.updateGiantCard(objectId);
-        }
+        this.updateObjectTabs(objectId);
       },
       onCameraModeChange: (mode, cfg) => {
         this.handleCameraModeUI(mode, cfg);
       }
     });
 
-    // If user already registered a tower previously, place it in the lineup
-    if (this.myPendingTower) {
+    // If user has a verified tower, display it on 3D canvas
+    if (this.myPendingTower && this.myPendingTower.status === 'verified') {
       this.scene.confirmAndRegisterMyTower(this.myPendingTower);
     }
+  }
+
+  updateAuthButtonUI() {
+    if (!this.btnAuth) return;
+    if (this.currentUser) {
+      this.btnAuth.innerHTML = `<i data-lucide="user" class="icon-xs"></i> <span>${this.currentUser.name} (로그아웃)</span>`;
+      this.btnAuth.title = '클릭 시 로그아웃';
+    } else {
+      this.btnAuth.innerHTML = `로그인 / 회원가입`;
+      this.btnAuth.title = '의사 회원 로그인';
+    }
+    this.refreshIcons();
   }
 
   initUIEvents() {
@@ -198,13 +231,11 @@ class LipoRankApp {
     // 4. Object Tab Clicks & Visibility Toggles
     this.objectTabs.forEach(tab => {
       tab.addEventListener('click', (e) => {
-        // If clicked on the eye toggle button, don't trigger selection/giant view
         if (e.target.closest('.btn-vis-toggle')) return;
 
         const objId = tab.dataset.objectId;
         if (objId) {
           if (objId === 'sample_tower') {
-            // Focus camera on SAMPLE official tower (x = -8.5, height = 4.82m)
             this.scene.startCameraTransition(
               new THREE.Vector3(-8.5, 3.0, 7.5),
               new THREE.Vector3(-8.5, 2.4, 0.0)
@@ -213,7 +244,6 @@ class LipoRankApp {
             return;
           }
 
-          // Always enter Giant View (close-up cinematic view) when clicking object tab
           this.scene.enterGiantView(objId);
           this.updateObjectTabs(objId);
         }
@@ -269,27 +299,14 @@ class LipoRankApp {
       });
     }
 
-    // 7. Register Rank Modal (Bottom Button)
-    const openModal = () => {
-      if (this.registerModal) {
-        const litersInput = document.getElementById('reg-liters');
-        if (litersInput) litersInput.value = this.currentLiters;
-        this.registerModal.classList.add('active');
-        this.refreshIcons();
-      }
-    };
-    const closeModal = () => {
-      if (this.registerModal) this.registerModal.classList.remove('active');
-    };
-
+    // 7. Instant Register to Ranking Table (Bottom Button)
     if (this.btnRegisterRankBottom) {
       this.btnRegisterRankBottom.addEventListener('click', () => {
-        // Instant Register: 바로 3D 캔버스 적당한 위치로 슬라이드 등록!
         const liters = this.currentLiters;
         const currentData = {
-          name: '내 원장',
-          licenseNo: '비공개',
-          clinic: '미인증 의원',
+          name: this.currentUser ? this.currentUser.name : (this.myPendingTower ? this.myPendingTower.name : '내 원장'),
+          licenseNo: this.myPendingTower ? this.myPendingTower.licenseNo : '제65219호',
+          clinic: this.myPendingTower ? this.myPendingTower.clinic : '미인증 의원',
           totalLiters: liters,
           cases: Math.round(liters / 2.5),
           crmSystem: '미연동',
@@ -299,31 +316,46 @@ class LipoRankApp {
         const registered = submitDoctorApplication(currentData);
         this.myPendingTower = registered;
 
-        // Slide the preview tower immediately into its height-ranked lineup slot
-        this.scene.confirmAndRegisterMyTower(registered);
+        // Re-render leaderboards & show registered banner
+        this.renderLeaderboards();
         this.renderMyRegisteredBanner();
-
-        // Visual feedback
         this.showRegistrationNotice(liters);
       });
     }
 
-    if (this.modalClose) {
-      this.modalClose.addEventListener('click', closeModal);
-    }
+    // Verification request modal open
+    const openVerifyModal = () => {
+      if (this.registerModal) {
+        const litersInput = document.getElementById('reg-liters');
+        if (litersInput) litersInput.value = this.myPendingTower ? this.myPendingTower.totalLiters : this.currentLiters;
+        this.registerModal.classList.add('active');
+        this.refreshIcons();
+      }
+    };
+    const closeVerifyModal = () => {
+      if (this.registerModal) this.registerModal.classList.remove('active');
+    };
+
+    if (this.modalClose) this.modalClose.addEventListener('click', closeVerifyModal);
     if (this.registerModal) {
       this.registerModal.addEventListener('click', e => {
-        if (e.target === this.registerModal) closeModal();
+        if (e.target === this.registerModal) closeVerifyModal();
       });
     }
 
     if (this.btnPillVerify) {
       this.btnPillVerify.addEventListener('click', () => {
-        openModal();
+        this.triggerAdminVerification();
       });
     }
 
-    // Form submit: Animate and slide tower into lineup!
+    if (this.btnRequestVerify) {
+      this.btnRequestVerify.addEventListener('click', () => {
+        this.triggerAdminVerification();
+      });
+    }
+
+    // Form submit: Verification Application
     if (this.registerForm) {
       this.registerForm.addEventListener('submit', e => {
         e.preventDefault();
@@ -334,34 +366,178 @@ class LipoRankApp {
           liters: Number(document.getElementById('reg-liters').value),
           cases: Number(document.getElementById('reg-cases').value),
           crmSystem: document.getElementById('reg-crm').value,
-          contact: document.getElementById('reg-contact').value
+          contact: document.getElementById('reg-contact').value,
+          status: "verified" // Verified!
         };
 
         const registered = submitDoctorApplication(formData);
         this.myPendingTower = registered;
 
-        // Slide the preview tower into its exact position in 3D lineup!
+        // Now certified! Place tower into 3D lineup!
         this.scene.confirmAndRegisterMyTower(registered);
+        this.renderLeaderboards();
         this.renderMyRegisteredBanner();
 
-        alert(`[${formData.name}] 원장님의 3D 탑이 생성되어 라인업 위치로 성공적으로 등록되었습니다!\n\n아래 [공인 인증받기]를 진행하시면 관리자 EMR 실사 후 온라인에 정식 공개됩니다.`);
-        closeModal();
+        alert(`[${formData.name}] 원장님의 EMR 전산 공인 인증이 완료되었습니다!\n\n전세계 공식 랭킹 리더보드에 [공인 인증 딱지]가 부여되었으며, 3D 캔버스 월드에 원장님의 크리스탈 큐브 탑이 정식 등재되었습니다.`);
+        closeVerifyModal();
         this.registerForm.reset();
       });
     }
 
-    // 8. "공인 인증받기" Click Flow
-    if (this.btnRequestVerify) {
-      this.btnRequestVerify.addEventListener('click', () => {
-        if (!this.myPendingTower) return;
-        alert(`[공인 인증 심사 접수 완료]\n\n원장님(${this.myPendingTower.name} / ${this.myPendingTower.clinic})의 의사면허(${this.myPendingTower.licenseNo}) 및 EMR 전자차트 공증 실사가 시작되었습니다.\n\n관리자 현장/전산 공인 인증 완료 시 전세계 LipoRank 공식 랭킹 리더보드에 정식 공개됩니다.`);
-        if (this.auditStatusTag) {
-          this.auditStatusTag.textContent = '공인 실사 심사 진행중 (온라인 공개 예정)';
-          this.auditStatusTag.style.background = '#fef3c7';
-          this.auditStatusTag.style.color = '#b45309';
+    // 8. Login & Auth Event Handlers
+    if (this.btnAuth) {
+      this.btnAuth.addEventListener('click', () => {
+        if (this.currentUser) {
+          if (confirm('로그아웃 하시겠습니까?')) {
+            setCurrentUser(null);
+            this.currentUser = null;
+            this.updateAuthButtonUI();
+            this.renderLeaderboards();
+          }
+        } else {
+          this.openLoginModal();
         }
       });
     }
+
+    if (this.loginModalClose) {
+      this.loginModalClose.addEventListener('click', () => this.closeLoginModal());
+    }
+    if (this.loginModal) {
+      this.loginModal.addEventListener('click', (e) => {
+        if (e.target === this.loginModal) this.closeLoginModal();
+      });
+    }
+
+    if (this.loginForm) {
+      this.loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const id = document.getElementById('login-id').value;
+        const loggedUser = { id, name: id === 'doctor_kim' ? '김민우 원장' : id };
+        setCurrentUser(loggedUser);
+        this.currentUser = loggedUser;
+        this.updateAuthButtonUI();
+        this.closeLoginModal();
+        this.renderLeaderboards();
+
+        // Prompt edit profile modal
+        setTimeout(() => {
+          this.openEditProfileModal();
+        }, 300);
+      });
+    }
+
+    // Edit Profile Modal
+    if (this.editProfileClose) {
+      this.editProfileClose.addEventListener('click', () => this.closeEditProfileModal());
+    }
+    if (this.editProfileModal) {
+      this.editProfileModal.addEventListener('click', (e) => {
+        if (e.target === this.editProfileModal) this.closeEditProfileModal();
+      });
+    }
+
+    if (this.editProfileForm) {
+      this.editProfileForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('edit-doc-name').value;
+        const clinic = document.getElementById('edit-doc-clinic').value;
+        const licenseNo = document.getElementById('edit-doc-license').value;
+        const specialty = document.getElementById('edit-doc-specialty').value;
+
+        if (this.myPendingTower) {
+          this.myPendingTower.name = name;
+          this.myPendingTower.clinic = clinic;
+          this.myPendingTower.licenseNo = licenseNo;
+          this.myPendingTower.specialty = specialty;
+          saveMyTower(this.myPendingTower);
+        }
+
+        this.closeEditProfileModal();
+        this.renderLeaderboards();
+        this.renderMyRegisteredBanner();
+        alert('집도의 정보가 성공적으로 수정되었습니다.');
+      });
+    }
+
+    // 9. Verified Only Toggles
+    const handleToggleVerified = (checked) => {
+      this.onlyVerifiedFilter = checked;
+      if (this.chkVdrHome) this.chkVdrHome.checked = checked;
+      if (this.chkVdrFull) this.chkVdrFull.checked = checked;
+      this.renderLeaderboards();
+    };
+
+    if (this.chkVdrHome) {
+      this.chkVdrHome.addEventListener('change', e => handleToggleVerified(e.target.checked));
+    }
+    if (this.chkVdrFull) {
+      this.chkVdrFull.addEventListener('change', e => handleToggleVerified(e.target.checked));
+    }
+  }
+
+  triggerAdminVerification() {
+    if (!this.myPendingTower) return;
+    const isNowVerified = confirm(
+      `[공인 EMR 인증 심사]\n\n원장님(${this.myPendingTower.name})의 의사면허 및 EMR 수술대장 공증 검증을 진행하시겠습니까?\n\n'확인'을 누르면 즉시 관리자 공인 인증이 완료되어 3D 캔버스에 탑이 영구 등재되고 랭크표에 공인 인증 딱지가 부여됩니다.`
+    );
+    if (isNowVerified) {
+      this.myPendingTower.status = 'verified';
+      this.myPendingTower.isOfficial = true;
+      this.myPendingTower.badge = 'CRM 전산 실시간 연동 공인';
+      saveMyTower(this.myPendingTower);
+
+      // Now showcase in 3D scene!
+      this.scene.confirmAndRegisterMyTower(this.myPendingTower);
+      this.renderLeaderboards();
+      this.renderMyRegisteredBanner();
+
+      alert(`축하합니다! 원장님의 EMR 공인 인증이 완료되었습니다.\n3D 캔버스 뷰포트에 내 탑이 노출되며, 랭크표에 공식 인증 딱지가 부착되었습니다.`);
+    }
+  }
+
+  openLoginModal() {
+    if (this.loginModal) {
+      this.loginModal.classList.add('active');
+      this.refreshIcons();
+    }
+  }
+
+  closeLoginModal() {
+    if (this.loginModal) this.loginModal.classList.remove('active');
+  }
+
+  openEditProfileModal() {
+    if (!this.currentUser) {
+      this.openLoginModal();
+      return;
+    }
+    if (this.editProfileModal) {
+      const nameInput = document.getElementById('edit-doc-name');
+      const clinicInput = document.getElementById('edit-doc-clinic');
+      const licInput = document.getElementById('edit-doc-license');
+      const specInput = document.getElementById('edit-doc-specialty');
+      const statusBadge = document.getElementById('edit-status-badge');
+
+      if (this.myPendingTower) {
+        if (nameInput) nameInput.value = this.myPendingTower.name || '';
+        if (clinicInput) clinicInput.value = this.myPendingTower.clinic || '';
+        if (licInput) licInput.value = this.myPendingTower.licenseNo || '';
+        if (specInput) specInput.value = this.myPendingTower.specialty || '';
+        if (statusBadge) {
+          statusBadge.textContent = this.myPendingTower.status === 'verified' ? '✓ 공인 인증 완료' : '공인 인증 대기중';
+          statusBadge.style.background = this.myPendingTower.status === 'verified' ? '#ecfdf5' : '#fef3c7';
+          statusBadge.style.color = this.myPendingTower.status === 'verified' ? '#047857' : '#b45309';
+        }
+      }
+
+      this.editProfileModal.classList.add('active');
+      this.refreshIcons();
+    }
+  }
+
+  closeEditProfileModal() {
+    if (this.editProfileModal) this.editProfileModal.classList.remove('active');
   }
 
   handleCameraModeUI(mode, cfg) {
@@ -374,18 +550,14 @@ class LipoRankApp {
     if (this.walkinHud) {
       this.walkinHud.classList.toggle('active', isWalkin);
     }
-    // Keep labelsOverlay visible in giant mode so user can click other tabs; hide only in walk-in mode
+
     if (this.labelsOverlay) {
-      this.labelsOverlay.classList.toggle('hidden', isWalkin);
+      this.labelsOverlay.style.display = isWalkin ? 'none' : 'flex';
     }
-    if (this.giantBtnText) {
-      this.giantBtnText.textContent = (isWalkin || isGiant) ? '전체보기 복귀' : '3D 세상 직접 들어가기';
-    }
+
     if (isGiant && cfg) {
       this.updateGiantCard(cfg.id);
-      this.updateObjectTabs(cfg.id);
     }
-    this.refreshIcons();
   }
 
   updateGiantCard(objectId) {
@@ -393,39 +565,32 @@ class LipoRankApp {
     if (!cfg) return;
 
     if (this.giantObjName) {
-      this.giantObjName.textContent = `${cfg.name} 거인 뷰`;
+      this.giantObjName.textContent = `${cfg.name} (${cfg.volumeMlText || cfg.volumeLiters + 'L'})`;
     }
-    if (this.giantDetailText) {
+    if (this.giantDetailText && cfg.getGiantDetail) {
       this.giantDetailText.innerHTML = cfg.getGiantDetail(this.currentLiters);
     }
+    this.refreshIcons();
   }
 
-  updateObjectTabs(objectId) {
-    let activeTab = null;
+  updateObjectTabs(activeId) {
     this.objectTabs.forEach(tab => {
-      const isMatch = tab.dataset.objectId === objectId;
-      tab.classList.toggle('active', isMatch);
-      if (isMatch) activeTab = tab;
+      const isSelected = (tab.dataset.objectId === activeId);
+      tab.classList.toggle('active', isSelected);
+      if (isSelected && this.labelsOverlay) {
+        const ribbonWidth = this.labelsOverlay.clientWidth;
+        const tabLeft = tab.offsetLeft;
+        const tabWidth = tab.offsetWidth;
+        const targetScrollLeft = tabLeft - (ribbonWidth / 2) + (tabWidth / 2);
+        this.labelsOverlay.scrollTo({ left: targetScrollLeft, behavior: 'smooth' });
+      }
     });
-
-    // Smoothly center the active tab in the 5-item visible viewport ribbon
-    if (activeTab && this.labelsOverlay) {
-      const containerWidth = this.labelsOverlay.clientWidth;
-      const tabLeft = activeTab.offsetLeft;
-      const tabWidth = activeTab.offsetWidth;
-      const targetScroll = tabLeft - (containerWidth / 2) + (tabWidth / 2);
-
-      this.labelsOverlay.scrollTo({
-        left: Math.max(0, targetScroll),
-        behavior: 'smooth'
-      });
-    }
   }
 
   updateAllTexts(liters, objectId) {
-    const formattedL = liters.toLocaleString();
+    const formattedL = liters.toLocaleString('ko-KR');
     const cubeCount = (liters / 1000).toFixed(2);
-    const heightM = (cubeCount * 1.0).toFixed(2);
+    const heightM = (cubeCount * 1.02).toFixed(2);
 
     if (this.currentVolText) {
       this.currentVolText.textContent = `${formattedL} L`;
@@ -433,36 +598,6 @@ class LipoRankApp {
     if (this.cubeCountBadge) {
       this.cubeCountBadge.textContent = `${cubeCount} 개 (${formattedL}L = ${cubeCount}m³)`;
     }
-
-    // Update Clinical Surgery Equivalent Statistics (Body parts with standard multiplier)
-    const selPart = document.getElementById('sel-surgery-part');
-    const partMultiplier = selPart ? parseFloat(selPart.value) || 3.0 : 3.0;
-    const partName = selPart ? selPart.options[selPart.selectedIndex].text.split('(')[0].trim() : '복부 360도';
-
-    const standardizedCases = Math.round(liters / partMultiplier);
-    const abCases = Math.round(liters / 3.0); // 3,000cc
-    const thighCases = Math.round(liters / 2.5); // 2,500cc
-    const armCases = Math.round(liters / 1.0); // 1,000cc
-    const chinCases = Math.round(liters / 0.1); // 100cc
-
-    const equivSummary = document.getElementById('clinical-equiv-text');
-    if (equivSummary) {
-      equivSummary.innerHTML = `선택 부위 표준: <strong>${standardizedCases.toLocaleString()}회 집도</strong> (총 ${formattedL}L)`;
-    }
-
-    const formulaEl = document.getElementById('part-summary-formula');
-    if (formulaEl) {
-      formulaEl.innerHTML = `표준화 공식: 총 ${formattedL}L ÷ 1회 [${partName}] ${partMultiplier}L = <strong>총 ${standardizedCases.toLocaleString()}회 집도 실적</strong>`;
-    }
-
-    const thighEl = document.getElementById('thigh-count-text');
-    const armEl = document.getElementById('arm-count-text');
-    const chinEl = document.getElementById('chin-count-text');
-
-    if (thighEl) thighEl.textContent = `${thighCases.toLocaleString()}회`;
-    if (armEl) armEl.textContent = `${armCases.toLocaleString()}회`;
-    if (chinEl) chinEl.textContent = `${chinCases.toLocaleString()}회`;
-
     if (this.centerHighlightAmount) {
       this.centerHighlightAmount.textContent = `${formattedL}L`;
     }
@@ -479,6 +614,28 @@ class LipoRankApp {
       this.fatCalText.textContent = `약 ${kcal.toLocaleString()} kcal`;
     }
 
+    const selPart = document.getElementById('sel-surgery-part');
+    const stdPerCase = selPart ? parseFloat(selPart.value) || 3.0 : 3.0;
+    const stdPartName = selPart ? selPart.options[selPart.selectedIndex].text.split('(')[0].trim() : '복부 360도 대용량';
+    const equivCount = Math.round(liters / stdPerCase);
+
+    const equivText = document.getElementById('clinical-equiv-text');
+    if (equivText) {
+      equivText.innerHTML = `선택 부위 표준: <strong>${equivCount.toLocaleString()}회 집도</strong> (총 ${formattedL}L)`;
+    }
+
+    const partSummary = document.getElementById('part-summary-formula');
+    if (partSummary) {
+      partSummary.innerHTML = `표준화 환산: 총 흡입량 ${formattedL}L ÷ 1회 표준 ${stdPerCase.toFixed(1)}L (${stdPartName}) = <strong>총 ${equivCount.toLocaleString()}회 집도 실적</strong>`;
+    }
+
+    const thighEl = document.getElementById('thigh-count-text');
+    if (thighEl) thighEl.textContent = `${Math.round(liters / 2.5).toLocaleString()}회`;
+    const armEl = document.getElementById('arm-count-text');
+    if (armEl) armEl.textContent = `${Math.round(liters / 1.0).toLocaleString()}회`;
+    const chinEl = document.getElementById('chin-count-text');
+    if (chinEl) chinEl.textContent = `${Math.round(liters / 0.1).toLocaleString()}회`;
+
     if (this.centerHighlightRatio) {
       this.centerHighlightRatio.textContent = `4.82m 높이 돌파`;
     }
@@ -491,33 +648,32 @@ class LipoRankApp {
         customMsg = `<strong>1m³ 큐브 ${cubeCount}개 (높이 ${heightM}m)</strong> 및 <strong>람보르기니 우라칸 1대(${pct}%)</strong>를 순수 지방으로 완판한 대기록입니다!`;
       } else if (objectId === 'cybertruck') {
         const pct = ((liters / 7100) * 100).toFixed(1);
-        customMsg = `<strong>1m³ 큐브 ${cubeCount}개</strong> 및 <strong>테슬라 사이버트럭의 ${pct}%</strong>를 황금빛 순수 지방으로 채운 체적입니다!`;
+        customMsg = `<strong>1m³ 큐브 ${cubeCount}개</strong> 및 <strong>테슬라 사이버트럭의 ${pct}%</strong>를 황금빛 순수 지방으로 가득 채운 체적입니다!`;
       } else if (objectId === 'fiji_bottle') {
         const bottles = Math.round(liters / 0.5);
-        customMsg = `<strong>1m³ 큐브 ${cubeCount}개</strong> 및 500ml 생수병 <strong>${bottles.toLocaleString()}병</strong>을 가득 채운 양입니다!`;
+        customMsg = `<strong>1m³ 큐브 ${cubeCount}개</strong> 및 500ml 생수병 <strong>${bottles.toLocaleString()}개</strong>를 가득 채운 양입니다!`;
       } else if (objectId === 'cow') {
         const cows = (liters / 300).toFixed(1);
-        customMsg = `<strong>1m³ 큐브 ${cubeCount}개</strong> 및 성체 젖소 <strong>${cows}마리분</strong>의 체지방량입니다!`;
+        customMsg = `<strong>1m³ 큐브 ${cubeCount}개</strong> 및 성체 젖소 <strong>${cows}마리</strong>의 체지방량입니다!`;
       }
       this.flexComparisonText.innerHTML = customMsg;
     }
 
-    if (this.scene.cameraMode === 'giant') {
+    if (this.scene && this.scene.cameraMode === 'giant') {
       this.updateGiantCard(objectId);
     }
   }
 
   showRegistrationNotice(liters) {
-    // Show non-blocking sleek toast/notice
     const toast = document.createElement('div');
     toast.className = 'reg-success-toast';
     toast.innerHTML = `
       <div class="toast-icon"><i data-lucide="check-circle" class="icon-md"></i></div>
       <div class="toast-body">
-        <strong>내 3D 큐브 탑(${liters.toLocaleString()}L)이 라인업에 등록되었습니다!</strong>
-        <p>현재 상태는 <em>[나만 보기]</em> 모드입니다. 관리자 EMR 실사 인증을 완료하면 전세계 공식 랭킹에 공개됩니다.</p>
+        <strong>랭크 표에 내 수술량(${liters.toLocaleString()}L)이 등록되었습니다!</strong>
+        <p>현재 상태는 <em>[공인 심사 대기]</em> 모드입니다. 관리자 EMR 실사 인증을 완료하면 3D 캔버스에 내 탑이 노출되고 공식 인증 마크가 부여됩니다.</p>
       </div>
-      <button class="toast-btn-action" id="toast-verify-btn">인증 신청</button>
+      <button class="toast-btn-action" id="toast-verify-btn">인증 받기</button>
     `;
     document.body.appendChild(toast);
     this.refreshIcons();
@@ -526,12 +682,7 @@ class LipoRankApp {
     if (verifyBtn) {
       verifyBtn.addEventListener('click', () => {
         toast.remove();
-        if (this.registerModal) {
-          const litersInput = document.getElementById('reg-liters');
-          if (litersInput) litersInput.value = liters;
-          this.registerModal.classList.add('active');
-          this.refreshIcons();
-        }
+        this.triggerAdminVerification();
       });
     }
 
@@ -549,9 +700,39 @@ class LipoRankApp {
         if (this.myRegisteredName) this.myRegisteredName.textContent = this.myPendingTower.name;
         if (this.myRegisteredClinic) this.myRegisteredClinic.textContent = this.myPendingTower.clinic;
         if (this.myRegisteredLiters) this.myRegisteredLiters.textContent = `${this.myPendingTower.totalLiters.toLocaleString()} L`;
+
+        if (this.auditStatusTag) {
+          if (this.myPendingTower.status === 'verified') {
+            this.auditStatusTag.textContent = '✓ 공인 EMR 인증 완료 (전세계 공개)';
+            this.auditStatusTag.style.background = '#ecfdf5';
+            this.auditStatusTag.style.color = '#047857';
+          } else {
+            this.auditStatusTag.textContent = '공인 인증 대기중 (나만 보기 모드)';
+            this.auditStatusTag.style.background = '#fef3c7';
+            this.auditStatusTag.style.color = '#b45309';
+          }
+        }
       }
       if (this.privateTowerPill) {
-        this.privateTowerPill.style.display = 'inline-flex';
+        if (this.myPendingTower.status === 'verified') {
+          this.privateTowerPill.style.display = 'inline-flex';
+          this.privateTowerPill.innerHTML = `
+            <span class="pill-lock-icon" style="color:#10b981;"><i data-lucide="check-circle-2" class="icon-xs"></i></span>
+            <span class="pill-text">내 탑 등재 완료 (<strong>공식 인증됨</strong>)</span>
+          `;
+        } else {
+          this.privateTowerPill.style.display = 'inline-flex';
+          this.privateTowerPill.innerHTML = `
+            <span class="pill-lock-icon"><i data-lucide="lock" class="icon-xs"></i></span>
+            <span class="pill-text">내 탑 등록됨 (<strong>나만 보기</strong>)</span>
+            <button id="btn-pill-verify" class="pill-verify-btn">
+              <i data-lucide="shield-check" class="icon-xs"></i>
+              <span>공인 인증받고 전세계 공개</span>
+            </button>
+          `;
+          const pBtn = this.privateTowerPill.querySelector('#btn-pill-verify');
+          if (pBtn) pBtn.addEventListener('click', () => this.triggerAdminVerification());
+        }
       }
     } else {
       if (this.myRegisteredBanner) this.myRegisteredBanner.style.display = 'none';
@@ -567,18 +748,65 @@ class LipoRankApp {
       if (!container) return;
       container.innerHTML = '';
 
-      this.doctors.forEach(doc => {
+      // Prepare list of doctors (official list + my private registered entry)
+      let list = [...this.doctors];
+
+      if (this.myPendingTower) {
+        const isVerified = (this.myPendingTower.status === 'verified');
+        const myDocItem = {
+          id: this.myPendingTower.id,
+          rank: '-',
+          name: this.myPendingTower.name,
+          clinic: this.myPendingTower.clinic,
+          licenseNo: this.myPendingTower.licenseNo,
+          totalLiters: this.myPendingTower.totalLiters,
+          totalCases: this.myPendingTower.totalCases,
+          avgCcPerCase: this.myPendingTower.avgCcPerCase || 2400,
+          pureFatRatio: 90,
+          status: this.myPendingTower.status,
+          badge: isVerified ? 'CRM 전산 실시간 연동 공인' : '공인 심사 대기 (나만 보기)',
+          avatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80',
+          isMyPrivate: !isVerified,
+          isMine: true
+        };
+        list.push(myDocItem);
+      }
+
+      // Sort by totalLiters descending
+      list.sort((a, b) => b.totalLiters - a.totalLiters);
+
+      // Filter verified only if toggle is on
+      if (this.onlyVerifiedFilter) {
+        list = list.filter(d => d.status === 'verified');
+      }
+
+      // Assign display ranks
+      list.forEach((doc, idx) => {
+        doc.displayRank = idx + 1;
+      });
+
+      list.forEach(doc => {
         const row = document.createElement('tr');
+        const isVerified = (doc.status === 'verified');
+        if (doc.isMine) row.classList.add('my-rank-row');
 
         row.innerHTML = `
           <td>
-            <div class="rank-badge">${doc.rank}</div>
+            <div class="rank-badge">${doc.displayRank}</div>
           </td>
           <td>
             <div class="doc-profile-cell">
-              <img src="${doc.avatar}" class="doc-img" alt="${doc.name}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(doc.name)}&background=0953ff&color=fff'">
+              <div class="doc-avatar-wrap">
+                <img src="${doc.avatar}" class="doc-img" alt="${doc.name}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(doc.name)}&background=0953ff&color=fff'">
+                ${isVerified 
+                  ? `<span class="avatar-verified-badge" title="공인 인증 의사"><i data-lucide="check" class="icon-xs"></i></span>`
+                  : `<span class="avatar-unverified-badge" title="미인증 대기"><i data-lucide="lock" class="icon-xs"></i></span>`}
+              </div>
               <div class="doc-info-text">
-                <div class="name">${doc.name}</div>
+                <div class="name">
+                  ${doc.name}
+                  ${doc.isMine ? `<button class="btn-edit-rank-info" title="집도의 정보 수정"><i data-lucide="edit-2" class="icon-xs"></i> 수정</button>` : ''}
+                </div>
                 <div class="sub">${doc.clinic} · 의사면허 ${doc.licenseNo}</div>
               </div>
             </div>
@@ -592,26 +820,43 @@ class LipoRankApp {
             <span style="font-size: 11px; color: #94a3b8; display: block;">순수지방 ${doc.pureFatRatio}%</span>
           </td>
           <td>
-            <span class="badge-verified">
-              <i data-lucide="shield-check" class="icon-sm"></i>
-              <span>${doc.badge}</span>
-            </span>
-          </td>
-          <td>
-            <button class="btn-fill-beaker" data-liters="${doc.totalLiters}" title="해당 원장님의 1m³ 큐브 탑 & 사물 체급 연동">
-              <span>3D 체급 연동</span>
-              <i data-lucide="arrow-right" class="icon-sm"></i>
-            </button>
+            ${isVerified ? `
+              <span class="badge-verified">
+                <i data-lucide="shield-check" class="icon-sm"></i>
+                <span>${doc.badge}</span>
+              </span>
+            ` : `
+              <span class="badge-tag-pending">
+                <i data-lucide="clock" class="icon-xs"></i>
+                <span>${doc.badge}</span>
+              </span>
+              ${doc.isMine ? `<button class="btn-row-verify"><i data-lucide="shield-check" class="icon-xs"></i> 인증받기</button>` : ''}
+            `}
           </td>
         `;
 
-        row.querySelector('.btn-fill-beaker').addEventListener('click', () => {
-          this.currentLiters = doc.totalLiters;
-          if (this.volSlider) this.volSlider.value = doc.totalLiters;
-          this.scene.setVolume(doc.totalLiters);
-          window.location.hash = '#home';
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
+        // Edit info button click -> require login or open edit modal
+        const editBtn = row.querySelector('.btn-edit-rank-info');
+        if (editBtn) {
+          editBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!this.currentUser) {
+              alert('이름과 병원 정보를 수정하려면 의사 로그인이 필요합니다.');
+              this.openLoginModal();
+            } else {
+              this.openEditProfileModal();
+            }
+          });
+        }
+
+        // Row verify button
+        const verifyBtn = row.querySelector('.btn-row-verify');
+        if (verifyBtn) {
+          verifyBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.triggerAdminVerification();
+          });
+        }
 
         container.appendChild(row);
       });

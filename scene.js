@@ -592,18 +592,9 @@ export class LipoRankScene {
    */
   confirmAndRegisterMyTower(doctorData) {
     const liters = doctorData.totalLiters || this.selectedLiters;
+    const isVerified = (doctorData.status === 'verified');
     
     // Calculate appropriate X position based on height/liters rank in the lineup:
-    // fiji (0.5L): x=-22
-    // barrel (200L): x=-19
-    // cow (300L): x=-5
-    // thinker (500L): x=12 (art)
-    // lambo (4700L): x=-14
-    // SAMPLE tower (4820L): x=-8.5
-    // cybertruck (7100L): x=4.5
-    // rex (8000L): x=20
-    // statue (15000L): x=29
-    // pool (2500000L): x=38
     let targetX = 0.5; // Default between cow/human and cybertruck
     if (liters < 100) {
       targetX = -20.5;
@@ -626,8 +617,9 @@ export class LipoRankScene {
     }
     const targetZ = 0.0;
 
-    // Build the registered tower in preview position first
-    this.buildTowerMesh(this.registeredMyTowerGroup, liters, 0, 1.6, true, `${doctorData.name || '내'} 탑`);
+    // Build the registered tower:
+    // If not verified yet, tower has isPrivate=true (blue tint & lock banner)
+    this.buildTowerMesh(this.registeredMyTowerGroup, liters, 0, 1.6, !isVerified, `${doctorData.name || '내'} 탑`);
     this.previewTowerGroup.visible = false;
     this.auraGroup.visible = false;
 
