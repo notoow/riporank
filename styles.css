@@ -138,13 +138,19 @@ body {
     display: none;
   }
   .search-pill {
-    display: none;
+    display: none !important;
   }
   .btn-hamburger {
     display: inline-flex;
   }
   .header-container {
     padding: 0 16px;
+  }
+  .header-left {
+    gap: 0;
+  }
+  .header-right {
+    gap: 8px;
   }
   .mobile-nav-drawer {
     display: flex;
@@ -1988,13 +1994,63 @@ body {
   }
 
   .viewport-wrapper {
-    height: 440px;
+    height: 480px;
+  }
+
+  /* 3D stage ribbons and floating overlays mobile spacing */
+  .carousel-arrow {
+    width: 32px;
+    height: 32px;
+    top: 14px;
+  }
+  .carousel-arrow.prev { left: 8px; }
+  .carousel-arrow.next { right: 8px; }
+
+  .stage-labels-overlay {
+    left: 44px;
+    right: 44px;
+    top: 10px;
+    padding: 4px 12px;
+    gap: 8px;
+  }
+
+  .object-label-tab {
+    flex: 0 0 110px;
+    min-width: 110px;
+    padding: 5px 6px;
+    border-radius: 10px;
+  }
+
+  .object-label-tab .label-title {
+    font-size: 11px;
+    margin-right: 8px;
+  }
+
+  .object-label-tab .label-vol {
+    font-size: 10px;
   }
 
   .viewport-controls-bar {
-    top: 66px;
+    top: auto;
+    bottom: 12px;
     right: 12px;
+    left: 12px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
     gap: 6px;
+  }
+
+  .private-status-pill {
+    padding: 4px 10px;
+    font-size: 11px;
+    gap: 6px;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .pill-verify-btn {
+    padding: 3px 8px;
+    font-size: 10px;
   }
 
   .action-pill-btn {
