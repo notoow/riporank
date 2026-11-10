@@ -9,13 +9,13 @@
  * 4.  cow              (300L)   : x = -12.0
  * 5.  thinker_rodin    (500L)   : x = -7.5
  * [6. 강민서 원장 탑]  (3,200L) : x = -2.5 (scene.js)
- * [7. 정우진 원장 탑]  (3,950L) : x =  1.0 (scene.js)
- * 8.  lamborghini      (4,700L) : x =  5.5
- * [9. SAMPLE 원장 탑]  (4,820L) : x = 10.5 (scene.js)
- * 10. cybertruck       (7,100L) : x = 15.5
- * 11. tyrannosaurus    (8,000L) : x = 23.5
- * 12. statue_liberty   (15,000L): x = 34.0
- * 13. swimming_pool (2,500,000L): x = 46.0
+ * [7. 정우진 원장 탑]  (3,950L) : x =  1.5 (scene.js)
+ * 8.  lamborghini      (4,700L) : x =  9.0   ← 차 길이 ~4.6m 고려 간격 확보
+ * [9. SAMPLE 원장 탑]  (4,820L) : x = 14.5 (scene.js)
+ * 10. cybertruck       (7,100L) : x = 21.0
+ * 11. tyrannosaurus    (8,000L) : x = 30.0
+ * 12. statue_liberty   (15,000L): x = 43.0
+ * 13. swimming_pool (2,500,000L): x = 57.0
  */
 export const COMPARISON_OBJECTS = [
   {
@@ -124,11 +124,11 @@ export const COMPARISON_OBJECTS = [
     volumeMlText: '4,700L',
     modelPath: './assets/models/lambo_lp670.glb',
     targetHeight: 1.165,
-    position: [5.5, 0, 0.0],
+    position: [9.0, 0, 0.0],
     rotation: [0, -Math.PI * 0.25, 0],
     description: '슈퍼카 우라칸 (전고 1.16m, 체적 4,700L)',
-    heroCamPos: [5.5, 0.65, 4.0],
-    heroLookAt: [5.5, 0.6, 0.0],
+    heroCamPos: [9.0, 0.65, 4.0],
+    heroLookAt: [9.0, 0.6, 0.0],
     isAlwaysVisible: true,
     getRatioText: (liters) => `${((liters / 4700) * 100).toFixed(1)}% (약 ${(liters / 4700).toFixed(2)}대 완판)`,
     getGiantDetail: (liters) => {
@@ -150,11 +150,11 @@ export const COMPARISON_OBJECTS = [
     volumeMlText: '7,100L',
     modelPath: './assets/models/Cyber_truck.glb',
     targetHeight: 1.79,
-    position: [15.5, 0, 0.0],
+    position: [21.0, 0, 0.0],
     rotation: [0, -Math.PI * 0.22, 0],
     description: '테슬라 사이버트럭 (전고 1.79m, 체적 7,100L)',
-    heroCamPos: [15.5, 0.9, 5.0],
-    heroLookAt: [15.5, 0.9, 0.0],
+    heroCamPos: [21.0, 0.9, 5.0],
+    heroLookAt: [21.0, 0.9, 0.0],
     isAlwaysVisible: true,
     getRatioText: (liters) => `${((liters / 7100) * 100).toFixed(1)}% 충전`,
     getGiantDetail: (liters) => {
@@ -171,11 +171,11 @@ export const COMPARISON_OBJECTS = [
     volumeMlText: '8,000L',
     modelPath: './assets/models/tyrannosaurus_rex.glb',
     targetHeight: 3.8,
-    position: [23.5, 0, 0.0],
+    position: [30.0, 0, 0.0],
     rotation: [0, -Math.PI * 0.35, 0],
     description: '티렉스 골반고 3.8m, 전장 12m',
-    heroCamPos: [23.5, 1.8, 7.0],
-    heroLookAt: [23.5, 1.8, 0.0],
+    heroCamPos: [30.0, 1.8, 7.0],
+    heroLookAt: [30.0, 1.8, 0.0],
     isAlwaysVisible: true,
     getRatioText: (liters) => `${((liters / 8000) * 100).toFixed(1)}% 체적`,
     getGiantDetail: (liters) => {
@@ -191,11 +191,11 @@ export const COMPARISON_OBJECTS = [
     volumeMlText: '15,000L',
     modelPath: './assets/models/statue_of_liberty.glb',
     targetHeight: 12.0,
-    position: [33.5, 0, 0.0],
+    position: [43.0, 0, 0.0],
     rotation: [0, Math.PI * 0.12, 0],
     description: '자유의 여신상 (체적 15,000L)',
-    heroCamPos: [33.5, 2.5, 9.0],
-    heroLookAt: [33.5, 5.0, 0.0],
+    heroCamPos: [43.0, 2.5, 9.0],
+    heroLookAt: [43.0, 5.0, 0.0],
     isAlwaysVisible: true,
     getRatioText: (liters) => `${((liters / 15000) * 100).toFixed(1)}% 도달`,
     getGiantDetail: (liters) => {
@@ -211,11 +211,11 @@ export const COMPARISON_OBJECTS = [
     volumeMlText: '2,500,000L',
     modelPath: './assets/models/swimming_pool_343.glb',
     targetLength: 20.0,
-    position: [44.0, 0, 0.0],
+    position: [57.0, 0, 0.0],
     rotation: [0, -Math.PI * 0.65, 0],
     description: '올림픽 공인 규격 수영장 (250만L)',
-    heroCamPos: [44.0, 4.0, 14.0],
-    heroLookAt: [44.0, 1.0, 0.0],
+    heroCamPos: [57.0, 4.0, 14.0],
+    heroLookAt: [57.0, 1.0, 0.0],
     isAlwaysVisible: true,
     getRatioText: (liters) => `${((liters / 2500000) * 100).toFixed(4)}% 수위`,
     getGiantDetail: (liters) => {

@@ -6,3 +6,13 @@ desktop.ini
 # Logs & temp
 *.log
 chrome_console.log
+
+# Dev tools / screenshots (not needed for pages)
+browser_capture.png
+preview.png
+capture.js
+inspect_cybertruck.js
+inspect_models.js
+measure_sizes.js
+copy_new_models.js
+references/

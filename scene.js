@@ -111,8 +111,8 @@ export class LipoRankScene {
 
     // Eye-level camera: centered on the core lineup, far enough to see small-to-large objects
     this.camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 300);
-    this.camera.position.set(4.0, 3.2, 18.5);
-    this.camera.lookAt(4.0, 1.6, 0);
+    this.camera.position.set(6.0, 3.5, 20.0);
+    this.camera.lookAt(6.0, 1.6, 0);
 
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -405,17 +405,17 @@ export class LipoRankScene {
     // cow (300L) at -12
     // thinker (500L) at -7.5
     // [DEMO] 강민서 원장 (3,200L) at -2.5
-    // [DEMO] 정우진 원장 (3,950L) at 1.0
-    // lamborghini (4,700L) at 5.5
-    // [DEMO] SAMPLE 원장 (4,820L) at 10.5
-    // cybertruck (7,100L) at 15.5
-    // tyrannosaurus (8,000L) at 23.5
-    // statue of liberty (15,000L) at 33.5
-    // swimming pool (2,500,000L) at 44.0
+    // [DEMO] 정우진 원장 (3,950L) at 1.5
+    // lamborghini (4,700L) at 9.0
+    // [DEMO] SAMPLE 원장 (4,820L) at 14.5
+    // cybertruck (7,100L) at 21.0
+    // tyrannosaurus (8,000L) at 30.0
+    // statue of liberty (15,000L) at 43.0
+    // swimming pool (2,500,000L) at 57.0
     const verifiedDoctors = [
       { id: 'doc-adm-03', rank: 3, name: '강민서 원장 (DEMO)', liters: 3200, x: -2.5, z: 0.0, badge: '[DEMO] 3위 강민서 원장' },
-      { id: 'doc-adm-02', rank: 2, name: '정우진 원장 (DEMO)', liters: 3950, x:  1.0, z: 0.0, badge: '[DEMO] 2위 정우진 원장' },
-      { id: 'doc-adm-01', rank: 1, name: 'SAMPLE 원장 (DEMO)', liters: 4820, x: 10.5, z: 0.0, badge: '[DEMO] 1위 SAMPLE 원장' }
+      { id: 'doc-adm-02', rank: 2, name: '정우진 원장 (DEMO)', liters: 3950, x:  1.5, z: 0.0, badge: '[DEMO] 2위 정우진 원장' },
+      { id: 'doc-adm-01', rank: 1, name: 'SAMPLE 원장 (DEMO)', liters: 4820, x: 14.5, z: 0.0, badge: '[DEMO] 1위 SAMPLE 원장' }
     ];
 
     verifiedDoctors.forEach(doc => {
@@ -874,13 +874,13 @@ export class LipoRankScene {
     // cow (300L): -12
     // thinker (500L): -7.5
     // [DEMO] 강민서 (3200L): -2.5
-    // [DEMO] 정우진 (3950L): 1.0
-    // lambo (4700L): 5.5
-    // [DEMO] SAMPLE (4820L): 10.5
-    // cybertruck (7100L): 15.5
-    // rex (8000L): 23.5
-    // statue (15000L): 33.5
-    // pool (2500000L): 44.0
+    // [DEMO] 정우진 (3950L): 1.5
+    // lambo (4700L): 9.0
+    // [DEMO] SAMPLE (4820L): 14.5
+    // cybertruck (7100L): 21.0
+    // rex (8000L): 30.0
+    // statue (15000L): 43.0
+    // pool (2500000L): 57.0
     let targetX = 0.0;
     if (liters <= 50) {
       targetX = -23.5; // between fiji and human
@@ -895,17 +895,17 @@ export class LipoRankScene {
     } else if (liters <= 3500) {
       targetX = -0.7; // between 강민서 and 정우진
     } else if (liters <= 4300) {
-      targetX = 3.2; // between 정우진 and lambo
+      targetX = 4.0; // between 정우진 and lambo
     } else if (liters <= 4800) {
-      targetX = 8.0; // between lambo and SAMPLE
+      targetX = 11.5; // between lambo and SAMPLE
     } else if (liters <= 6000) {
-      targetX = 13.0; // between SAMPLE and cybertruck
+      targetX = 17.5; // between SAMPLE and cybertruck
     } else if (liters <= 7500) {
-      targetX = 19.5; // between cybertruck and rex
+      targetX = 25.5; // between cybertruck and rex
     } else if (liters <= 12000) {
-      targetX = 28.5; // between rex and statue
+      targetX = 36.5; // between rex and statue
     } else {
-      targetX = 38.5; // between statue and pool
+      targetX = 50.0; // between statue and pool
     }
     const targetZ = 0.0;
 
