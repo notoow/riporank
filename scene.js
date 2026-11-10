@@ -64,12 +64,14 @@ export class LipoRankScene {
     this.worldBounds = {};
 
     // 1m³ Cube Towers:
-    // 1. officialTowerGroup: SAMPLE 원장 공인 탑 (람보르기니 바로 오른쪽 x = -1.2에 상시 배치)
-    // 2. previewTowerGroup: 슬라이더 조절 시 앞쪽 중앙(z = 1.6)에 멋진 오라와 함께 뜨는 프리뷰 탑
-    // 3. registeredMyTowerGroup: "내 탑 등록하기" 완료 시 라인업으로 슬라이드 이동한 내 영구 탑
-    this.officialTowerGroup = new THREE.Group();
+    // 1. doctorTowerGroups: Map of all verified doctor towers (SAMPLE 원장, 정우진 원장, 강민서 원장)
+    // 2. previewTowerGroup: 슬라이더 조절 시 앞쪽 중앙(z = 1.6)에 멋진 오라와 함께 뜨는 내 조절 탑 (Yellow)
+    // 3. registeredMyTowerGroup: "내 탑 등록하기" 완료 시 라인업으로 슬라이드 이동한 내 영구 탑 (Yellow)
+    this.doctorTowerGroups = {}; // { [doctorId]: { group, data, posX, cubes: [...] } }
+    this.officialTowerGroup = new THREE.Group(); // Legacy alias for SAMPLE 원장
     this.previewTowerGroup = new THREE.Group();
     this.registeredMyTowerGroup = new THREE.Group();
+    this.activeComparisonDoctorId = null;
 
     // Tower Sliding Animation
     this.isSlidingMyTower = false;
@@ -89,8 +91,8 @@ export class LipoRankScene {
     this.initPreviewAura();
     this.loadAllObjects();
 
-    // Permanent Official SAMPLE Tower (4,820L / 4.82m) — right of lamborghini (x=-13)
-    this.buildTowerMesh(this.officialTowerGroup, 4820, -8.5, 0.0, false, 'SAMPLE 원장 (공인 1위 / 4,820L)');
+    // Build all verified doctors' towers from initial verified data
+    this.initDoctorTowers();
 
     this.initControls();
     this.initEvents();
@@ -356,9 +358,16 @@ export class LipoRankScene {
 
           // Step 2: re-measure after scale to get final ground offset
           const box1 = new THREE.Box3().setFromObject(holder);
+          let groundY = 0;
+          if (cfg.id === 'lamborghini') {
+            groundY = 0.0; // Lambo origin is already wheels on ground or known offset
+          } else {
+            groundY = -box1.min.y;
+          }
+
           holder.position.set(
             cfg.position[0],
-            -box1.min.y, // lift so bottom of object is exactly at y = 0
+            groundY,
             cfg.position[2]
           );
 
@@ -384,8 +393,234 @@ export class LipoRankScene {
     });
   }
 
+  initDoctorTowers() {
+    const verifiedDoctors = [
+      { id: 'doc-adm-03', rank: 3, name: '강민서 원장', liters: 3200, x: -11.6, z: 0.0, badge: '공인 3위 강민서 원장' },
+      { id: 'doc-adm-02', rank: 2, name: '정우진 원장', liters: 3950, x: -9.8, z: 0.0, badge: '공인 2위 정우진 원장' },
+      { id: 'doc-adm-01', rank: 1, name: 'SAMPLE 원장', liters: 4820, x: -8.0, z: 0.0, badge: '공인 1위 SAMPLE 원장' }
+    ];
+
+    verifiedDoctors.forEach(doc => {
+      const group = new THREE.Group();
+      this.scene.add(group);
+      this.buildDoctorTower(group, doc.liters, doc.x, doc.z, doc);
+      this.doctorTowerGroups[doc.id] = {
+        group: group,
+        data: doc,
+        posX: doc.x,
+        posZ: doc.z
+      };
+      if (doc.id === 'doc-adm-01') {
+        this.officialTowerGroup = group; // Maintain backward compatibility
+      }
+    });
+  }
+
   /**
-   * Builds a 1m³ Glass Cube Tower
+   * Builds an Official Doctor Tower (Blue theme by default, with yellow comparison fill support)
+   */
+  buildDoctorTower(group, totalLiters, posX, posZ, doctorData, userCompareLiters = 0) {
+    while (group.children.length > 0) {
+      group.remove(group.children[0]);
+    }
+
+    const fullCubes = Math.floor(totalLiters / 1000);
+    const remainderLiters = totalLiters % 1000;
+    const partialRatio = remainderLiters / 1000;
+    const totalCubes = remainderLiters > 0 ? fullCubes + 1 : fullCubes;
+
+    const cubeSize = 1.0;
+    const gap = 0.02;
+    const stepY = cubeSize + gap;
+
+    group.position.set(posX, 0, posZ);
+
+    for (let i = 0; i < totalCubes; i++) {
+      const isTopPartial = (i === fullCubes && partialRatio > 0);
+      const fillPct = isTopPartial ? partialRatio : 1.0;
+      const cubeY = (i * stepY) + (cubeSize / 2);
+
+      const cubeHolder = new THREE.Group();
+      cubeHolder.position.set(0, cubeY, 0);
+
+      // Glass Outer Shell
+      const boxGeo = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+      const glassMesh = new THREE.Mesh(boxGeo, this.cubeGlassMaterial);
+      glassMesh.castShadow = false;
+      glassMesh.receiveShadow = false;
+      glassMesh.renderOrder = 1;
+      cubeHolder.add(glassMesh);
+
+      // Wireframe: Blue
+      const wireGeo = new THREE.EdgesGeometry(boxGeo);
+      const wireMat = new THREE.LineBasicMaterial({
+        color: 0x38bdf8,
+        transparent: true,
+        opacity: 0.90
+      });
+      const wireLine = new THREE.LineSegments(wireGeo, wireMat);
+      cubeHolder.add(wireLine);
+
+      // Cube Liters range: from i * 1000 to (i + 1) * 1000
+      const cubeStartLiters = i * 1000;
+      const cubeCapacityLiters = isTopPartial ? remainderLiters : 1000;
+      const cubeEndLiters = cubeStartLiters + cubeCapacityLiters;
+
+      // Fat Meshes inside:
+      // If userCompareLiters > 0:
+      // The portion up to userCompareLiters is rendered in Yellow (내 수술량),
+      // and the portion from userCompareLiters up to cubeEndLiters is Blue (상대 원장 수술량).
+      const userLitersInCube = Math.max(0, Math.min(cubeCapacityLiters, userCompareLiters - cubeStartLiters));
+      const competitorLitersInCube = Math.max(0, cubeCapacityLiters - userLitersInCube);
+
+      const userPct = userLitersInCube / 1000;
+      const compPct = competitorLitersInCube / 1000;
+
+      // 1. User portion (Yellow fat)
+      if (userPct > 0) {
+        const uHeight = Math.max(0.015, (cubeSize * 0.94) * userPct);
+        const uGeo = new THREE.BoxGeometry(cubeSize * 0.90, uHeight, cubeSize * 0.90);
+        const uMat = new THREE.MeshStandardMaterial({
+          color: 0xf59e0b,
+          emissive: 0xd97706,
+          emissiveIntensity: 0.55,
+          roughness: 0.25,
+          metalness: 0.1,
+          transparent: true,
+          opacity: 0.92
+        });
+        const uMesh = new THREE.Mesh(uGeo, uMat);
+        uMesh.position.y = -(cubeSize * 0.94 / 2) + (uHeight / 2);
+        cubeHolder.add(uMesh);
+      }
+
+      // 2. Doctor / Competitor remaining portion (Blue fat)
+      if (compPct > 0) {
+        const cHeight = Math.max(0.015, (cubeSize * 0.94) * compPct);
+        const cGeo = new THREE.BoxGeometry(cubeSize * 0.90, cHeight, cubeSize * 0.90);
+        const cMat = new THREE.MeshStandardMaterial({
+          color: 0x0284c7,
+          emissive: 0x0369a1,
+          emissiveIntensity: 0.45,
+          roughness: 0.25,
+          metalness: 0.1,
+          transparent: true,
+          opacity: 0.85
+        });
+        const cMesh = new THREE.Mesh(cGeo, cMat);
+        const bottomOffset = userPct > 0 ? (cubeSize * 0.94 * userPct) : 0;
+        cMesh.position.y = -(cubeSize * 0.94 / 2) + bottomOffset + (cHeight / 2);
+        cubeHolder.add(cMesh);
+      }
+
+      group.add(cubeHolder);
+    }
+
+    const topHeight = (totalCubes * stepY);
+    this.createDoctorTowerTopMarker(group, topHeight, totalLiters, doctorData, userCompareLiters);
+  }
+
+  createDoctorTowerTopMarker(group, topHeight, totalLiters, doctorData, userCompareLiters = 0) {
+    const markerGroup = new THREE.Group();
+    markerGroup.position.set(0, topHeight + 0.16, 0);
+
+    const pinGeo = new THREE.OctahedronGeometry(0.12, 0);
+    const pinMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      emissive: 0x0284c7,
+      emissiveIntensity: 0.95,
+      metalness: 0.2,
+      roughness: 0.1
+    });
+    const pinMesh = new THREE.Mesh(pinGeo, pinMat);
+    markerGroup.add(pinMesh);
+
+    // Canvas label Sprite above the tower
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 160;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        // High-contrast solid white background card
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(8, 8, 496, 144);
+
+        // Blue border
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = '#0284c7';
+        ctx.strokeRect(8, 8, 496, 144);
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // High contrast Blue background card
+        ctx.fillStyle = '#0284c7';
+        ctx.fillRect(4, 4, 504, 152);
+
+        // White border
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = '#ffffff';
+        ctx.strokeRect(4, 4, 504, 152);
+
+        // Badge pill
+        ctx.fillStyle = '#e0f2fe';
+        ctx.font = '900 32px Arial, sans-serif';
+        ctx.fillText(`★ 공인 ${doctorData.rank || ''}위 ${doctorData.name}`, 256, 44);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 44px Arial, sans-serif';
+        const heightM = ((totalLiters / 1000) * 1.02).toFixed(2);
+        ctx.fillText(`${totalLiters.toLocaleString()}L (${heightM}m)`, 256, 92);
+
+        // If user comparison active, show gap subtitle
+        if (userCompareLiters > 0) {
+          const diff = userCompareLiters - totalLiters;
+          const diffText = diff >= 0
+            ? `+${diff.toLocaleString()}L 앞섬! (노란색)`
+            : `-${Math.abs(diff).toLocaleString()}L 차이 (노란색 차오름)`;
+          ctx.fillStyle = diff >= 0 ? '#4ade80' : '#fef08a';
+          ctx.font = 'bold 28px Arial, sans-serif';
+          ctx.fillText(diffText, 256, 132);
+        }
+
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: false });
+        const sprite = new THREE.Sprite(spriteMat);
+        sprite.position.set(0, 0.9, 0);
+        sprite.scale.set(2.4, 0.75, 1.0);
+        markerGroup.add(sprite);
+      }
+    } catch (e) {
+      console.warn('Canvas texture creation error:', e);
+    }
+
+    group.add(markerGroup);
+  }
+
+  /**
+   * Set Comparison Fill on another doctor's tower
+   */
+  setDoctorTowerComparison(doctorId, userLiters) {
+    this.activeComparisonDoctorId = doctorId;
+    Object.keys(this.doctorTowerGroups).forEach(id => {
+      const docEntry = this.doctorTowerGroups[id];
+      const compareL = (id === doctorId) ? userLiters : 0;
+      this.buildDoctorTower(docEntry.group, docEntry.data.liters, docEntry.posX, docEntry.posZ, docEntry.data, compareL);
+    });
+  }
+
+  clearDoctorTowerComparison() {
+    this.activeComparisonDoctorId = null;
+    Object.keys(this.doctorTowerGroups).forEach(id => {
+      const docEntry = this.doctorTowerGroups[id];
+      this.buildDoctorTower(docEntry.group, docEntry.data.liters, docEntry.posX, docEntry.posZ, docEntry.data, 0);
+    });
+  }
+
+  /**
+   * Builds a 1m³ Glass Cube Tower (User Preview / Registered Tower - Yellow theme)
    * @param {THREE.Group} group
    * @param {number} liters
    * @param {number} posX
@@ -418,35 +653,35 @@ export class LipoRankScene {
       const cubeHolder = new THREE.Group();
       cubeHolder.position.set(0, cubeY, 0);
 
-      // Crystal Glass Outer Shell — subtle ghost-blue tint, very transparent
+      // Crystal Glass Outer Shell
       const boxGeo = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
       const glassMesh = new THREE.Mesh(boxGeo, this.cubeGlassMaterial);
       glassMesh.castShadow = false;
       glassMesh.receiveShadow = false;
-      glassMesh.renderOrder = 1; // Render glass after solid objects
+      glassMesh.renderOrder = 1;
       cubeHolder.add(glassMesh);
 
-      // Glowing edge wireframe (most visible part of the cube)
+      // Glowing edge wireframe (Yellow for My Tower)
       const wireGeo = new THREE.EdgesGeometry(boxGeo);
       const wireMat = new THREE.LineBasicMaterial({
-        color: isPrivate ? 0x38bdf8 : 0xfde68a,
+        color: 0xfde68a,
         transparent: true,
         opacity: 0.90
       });
       const wireLine = new THREE.LineSegments(wireGeo, wireMat);
       cubeHolder.add(wireLine);
 
-      // Inner Golden Fat Core — translucent so glass outline is visible
+      // Inner Golden Fat Core (Always Yellow for My Tower)
       const fatHeight = Math.max(0.02, (cubeSize * 0.94) * fillPct);
       const fatGeo = new THREE.BoxGeometry(cubeSize * 0.90, fatHeight, cubeSize * 0.90);
       const fatMat = new THREE.MeshStandardMaterial({
-        color: isPrivate ? 0x38bdf8 : 0xf59e0b,
-        emissive: isPrivate ? 0x0369a1 : 0xd97706,
-        emissiveIntensity: 0.5,
+        color: 0xf59e0b,
+        emissive: 0xd97706,
+        emissiveIntensity: 0.55,
         roughness: 0.25,
         metalness: 0.1,
         transparent: true,
-        opacity: 0.88
+        opacity: 0.90
       });
       const fatMesh = new THREE.Mesh(fatGeo, fatMat);
       fatMesh.position.y = -(cubeSize * 0.94 / 2) + (fatHeight / 2);
@@ -481,44 +716,43 @@ export class LipoRankScene {
       canvas.height = 140;
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        // Rounded background card
-        ctx.fillStyle = isPrivate ? 'rgba(15, 23, 42, 0.85)' : 'rgba(255, 255, 255, 0.92)';
-        const r = 24;
-        ctx.beginPath();
-        ctx.roundRect(16, 16, 480, 108, r);
-        ctx.fill();
+        // High-contrast solid white card
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(8, 8, 496, 124);
 
-        ctx.strokeStyle = isPrivate ? '#38bdf8' : '#0953ff';
-        ctx.lineWidth = 4;
-        ctx.stroke();
+        // Border
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = isPrivate ? '#f59e0b' : '#0953ff';
+        ctx.strokeRect(8, 8, 496, 124);
 
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
         // Badge pill text
         if (isPrivate) {
-          ctx.fillStyle = '#38bdf8';
-          ctx.font = 'bold 28px Pretendard, sans-serif';
-          ctx.fillText('🔒 나만 보기 (공인 인증 심사 필요)', 256, 48);
+          ctx.fillStyle = '#d97706';
+          ctx.font = '900 28px "Pretendard", sans-serif';
+          ctx.fillText('🔒 나만 보기 (공인 심사 대기)', 256, 44);
           
-          ctx.fillStyle = '#f8fafc';
-          ctx.font = 'bold 36px Pretendard, sans-serif';
-          ctx.fillText(`내 수술탑 ${liters.toLocaleString()}L`, 256, 92);
+          ctx.fillStyle = '#0f172a';
+          ctx.font = '900 36px "Pretendard", sans-serif';
+          ctx.fillText(`내 수술탑 ${liters.toLocaleString()}L`, 256, 88);
         } else {
           ctx.fillStyle = '#0953ff';
-          ctx.font = 'bold 28px Pretendard, sans-serif';
-          ctx.fillText('★ 공인 1위 SAMPLE 원장', 256, 48);
+          ctx.font = '900 28px "Pretendard", sans-serif';
+          ctx.fillText('👑 내 수술탑 (공인 완료)', 256, 44);
 
           ctx.fillStyle = '#0f172a';
-          ctx.font = 'bold 36px Pretendard, sans-serif';
-          ctx.fillText(`${liters.toLocaleString()}L (공인 4.82m)`, 256, 92);
+          ctx.font = '900 36px "Pretendard", sans-serif';
+          ctx.fillText(`${liters.toLocaleString()}L`, 256, 88);
         }
 
         const texture = new THREE.CanvasTexture(canvas);
-        const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
+        texture.needsUpdate = true;
+        const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: false });
         const sprite = new THREE.Sprite(spriteMat);
-        sprite.position.set(0, 0.75, 0);
-        sprite.scale.set(2.2, 0.6, 1.0);
+        sprite.position.set(0, 0.85, 0);
+        sprite.scale.set(2.4, 0.65, 1.0);
         markerGroup.add(sprite);
       }
     } catch (e) {
@@ -567,9 +801,25 @@ export class LipoRankScene {
     return this.officialTowerGroup.visible;
   }
 
+  toggleDoctorTowerVisibility(doctorId) {
+    const entry = this.doctorTowerGroups[doctorId];
+    if (entry && entry.group) {
+      entry.group.visible = !entry.group.visible;
+      return entry.group.visible;
+    }
+    return false;
+  }
+
   toggleObjectVisibility(objectId) {
-    if (objectId === 'sample_tower' || objectId === 'official_tower') {
-      return this.toggleOfficialTowerVisibility();
+    if (objectId === 'sample_tower' || objectId === 'official_tower' || objectId === 'doc-adm-01') {
+      return this.toggleDoctorTowerVisibility('doc-adm-01');
+    }
+    if (objectId === 'doc-adm-02' || objectId === 'doc-adm-03') {
+      return this.toggleDoctorTowerVisibility(objectId);
+    }
+    if (objectId === 'my_tower') {
+      this.registeredMyTowerGroup.visible = !this.registeredMyTowerGroup.visible;
+      return this.registeredMyTowerGroup.visible;
     }
     const holder = this.modelHolders[objectId];
     if (!holder) return false;
@@ -659,18 +909,21 @@ export class LipoRankScene {
       }
     });
 
-    // Also shift official SAMPLE tower if present
-    if (this.officialTowerGroup) {
-      const origSampleX = -8.5;
-      const newSampleX = origSampleX > targetX ? (origSampleX + pushDist) : (origSampleX - pushDist);
-      this.shiftedObjects.push({
-        obj: this.officialTowerGroup,
-        startX: this.officialTowerGroup.position.x,
-        targetX: newSampleX,
-        y: this.officialTowerGroup.position.y,
-        z: this.officialTowerGroup.position.z
-      });
-    }
+    // Also shift all verified doctor towers
+    Object.keys(this.doctorTowerGroups).forEach(docId => {
+      const entry = this.doctorTowerGroups[docId];
+      if (entry && entry.group) {
+        const origDocX = entry.posX;
+        const newDocX = origDocX > targetX ? (origDocX + pushDist) : (origDocX - pushDist);
+        this.shiftedObjects.push({
+          obj: entry.group,
+          startX: entry.group.position.x,
+          targetX: newDocX,
+          y: entry.group.position.y,
+          z: entry.group.position.z
+        });
+      }
+    });
 
     this.isShiftingNeighbors = true;
     this.shiftProgress = 0.0;

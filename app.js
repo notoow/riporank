@@ -229,24 +229,52 @@ class LipoRankApp {
     }
 
     // 4. Object Tab Clicks & Visibility Toggles
+    this.objectTabs = document.querySelectorAll('.object-label-tab');
     this.objectTabs.forEach(tab => {
       tab.addEventListener('click', (e) => {
         if (e.target.closest('.btn-vis-toggle')) return;
 
         const objId = tab.dataset.objectId;
-        if (objId) {
-          if (objId === 'sample_tower') {
-            this.scene.startCameraTransition(
-              new THREE.Vector3(-8.5, 3.0, 7.5),
-              new THREE.Vector3(-8.5, 2.4, 0.0)
-            );
-            this.updateObjectTabs(objId);
-            return;
-          }
+        if (!objId) return;
 
-          this.scene.enterGiantView(objId);
+        // A. Verified Doctor Tower Clicked: Focus & Trigger Yellow Comparison Fill!
+        if (objId.startsWith('doc-adm-') || objId === 'sample_tower' || objId === 'official_tower') {
+          const docId = (objId === 'sample_tower' || objId === 'official_tower') ? 'doc-adm-01' : objId;
+          const docEntry = this.scene.doctorTowerGroups ? this.scene.doctorTowerGroups[docId] : null;
+          const targetX = docEntry ? docEntry.posX : -8.5;
+          const docLiters = docEntry ? docEntry.data.liters : 4820;
+          const cubes = Math.max(1, Math.ceil(docLiters / 1000));
+          const camY = Math.max(2.2, cubes * 0.55 + 0.6);
+          const camZ = Math.max(5.5, 3.5 + cubes * 0.4);
+
+          // Trigger Yellow Comparison Fill inside this blue tower!
+          this.scene.setDoctorTowerComparison(docId, this.currentLiters);
+
+          this.scene.startCameraTransition(
+            new THREE.Vector3(targetX, camY, camZ),
+            new THREE.Vector3(targetX, cubes * 0.5, 0.0)
+          );
           this.updateObjectTabs(objId);
+          return;
         }
+
+        // B. My Tower Clicked
+        if (objId === 'my_tower') {
+          this.scene.clearDoctorTowerComparison();
+          const targetX = this.scene.slideTargetPos ? this.scene.slideTargetPos.x : 0;
+          const cubes = Math.max(1, Math.ceil(this.currentLiters / 1000));
+          this.scene.startCameraTransition(
+            new THREE.Vector3(targetX, Math.max(2.2, cubes * 0.55 + 0.6), Math.max(5.5, 3.5 + cubes * 0.4)),
+            new THREE.Vector3(targetX, cubes * 0.5, 0.0)
+          );
+          this.updateObjectTabs(objId);
+          return;
+        }
+
+        // C. Standard Comparison Object Clicked
+        this.scene.clearDoctorTowerComparison();
+        this.scene.enterGiantView(objId);
+        this.updateObjectTabs(objId);
       });
     });
 
@@ -697,7 +725,18 @@ class LipoRankApp {
   }
 
   renderMyRegisteredBanner() {
+    const myTab = document.getElementById('tab-my-tower');
+    const myTabVol = document.getElementById('tab-my-tower-vol');
+
     if (this.myPendingTower) {
+      if (myTab) {
+        myTab.style.display = 'flex';
+        if (myTabVol) {
+          const l = this.myPendingTower.totalLiters || 0;
+          const h = ((l / 1000) * 1.02).toFixed(2);
+          myTabVol.textContent = `${l.toLocaleString()}L · ${h}m`;
+        }
+      }
       if (this.myRegisteredBanner) {
         this.myRegisteredBanner.style.display = 'flex';
         if (this.myRegisteredName) this.myRegisteredName.textContent = this.myPendingTower.name;
