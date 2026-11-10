@@ -1968,17 +1968,179 @@ body {
   margin-bottom: 8px;
 }
 
-.btn-request-verify {
-  background: #0953ff;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 10px;
-  font-size: 12px;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
+.table-responsive-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
+
+/* ==========================================================================
+   Mobile & Responsive Layout Optimizations
+   ========================================================================== */
+
+@media (max-width: 900px) {
+  .page-wrap {
+    padding: 16px 12px 60px 12px;
+  }
+
+  .stage-card {
+    border-radius: var(--radius-md);
+  }
+
+  .viewport-wrapper {
+    height: 440px;
+  }
+
+  .viewport-controls-bar {
+    top: 66px;
+    right: 12px;
+    gap: 6px;
+  }
+
+  .action-pill-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .doctor-flex-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 14px 16px;
+    gap: 12px;
+  }
+
+  .flex-stats-pill {
+    width: 100%;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .stage-bottom-strip {
+    padding: 16px 14px;
+  }
+
+  .strip-row-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .vol-display-group {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .strip-badges-group {
+    justify-content: flex-start;
+    gap: 6px;
+  }
+
+  .btn-register-canvas-bottom {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 18px;
+  }
+
+  .home-leaderboard-preview, .leaderboard-wrap {
+    padding: 16px 12px;
+    border-radius: var(--radius-md);
+    margin-top: 24px;
+  }
+
+  .table-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .table-header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .my-registered-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding: 14px;
+  }
+
+  .reg-right {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .reg-liters-num {
+    margin-bottom: 0;
+    text-align: left;
+  }
+}
+
+@media (max-width: 640px) {
+  .btn-auth {
+    padding: 6px 12px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .header-left {
+    gap: 12px;
+  }
+
+  .header-logo .logo-text {
+    font-size: 18px;
+  }
+
+  .header-right {
+    gap: 8px;
+  }
+
+  .btn-bell {
+    display: none;
+  }
+
+  /* Doc Table Mobile Refinement */
+  .doc-table {
+    min-width: 480px; /* guarantees clean horizontal swipe without cell crushing */
+  }
+
+  .doc-table th, .doc-table td {
+    padding: 10px 8px;
+  }
+
+  .doc-img {
+    width: 36px;
+    height: 36px;
+  }
+
+  .doc-info-text .name {
+    font-size: 13px;
+  }
+
+  .doc-info-text .sub {
+    font-size: 11px;
+  }
+
+  .quick-chips-row {
+    gap: 6px;
+  }
+
+  .quick-chips-row .chip {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .clinical-info-strip {
+    gap: 6px;
+  }
+
+  .clinical-pill {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+}
+
 
