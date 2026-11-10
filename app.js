@@ -830,7 +830,9 @@ class LipoRankApp {
       list.forEach(doc => {
         const row = document.createElement('tr');
         const isVerified = (doc.status === 'verified');
+        const isDemo = !!doc.isDemo;
         if (doc.isMine) row.classList.add('my-rank-row');
+        if (isDemo) row.classList.add('demo-rank-row');
 
         row.innerHTML = `
           <td>
@@ -840,13 +842,14 @@ class LipoRankApp {
             <div class="doc-profile-cell">
               <div class="doc-avatar-wrap">
                 <img src="${doc.avatar}" class="doc-img" alt="${doc.name}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(doc.name)}&background=0953ff&color=fff'">
-                ${isVerified 
-                  ? `<span class="avatar-verified-badge" title="공인 인증 의사"><i data-lucide="check" class="icon-xs"></i></span>`
+                ${isVerified
+                  ? `<span class="avatar-verified-badge" title="공인 인증 의사"><i data-lucide="shield-check" class="icon-xs"></i></span>`
                   : `<span class="avatar-unverified-badge" title="미인증 대기"><i data-lucide="lock" class="icon-xs"></i></span>`}
               </div>
               <div class="doc-info-text">
                 <div class="name">
                   ${doc.name}
+                  ${isDemo ? `<span class="badge-demo-inline">DEMO</span>` : ''}
                   ${doc.isMine ? `<button class="btn-edit-rank-info" title="집도의 정보 수정"><i data-lucide="edit-2" class="icon-xs"></i> 수정</button>` : ''}
                 </div>
                 <div class="sub">${doc.clinic} · 의사면허 ${doc.licenseNo}</div>

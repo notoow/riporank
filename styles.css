@@ -189,6 +189,23 @@ body {
 }
 
 /* 2. Page Wrap & SPA Tab Views */
+.demo-notice-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fef3c7;
+  border-bottom: 2px solid #f59e0b;
+  color: #92400e;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 9px 32px;
+  letter-spacing: 0.01em;
+}
+.demo-notice-bar strong {
+  font-weight: 800;
+  color: #b45309;
+}
+
 .page-wrap {
   max-width: 1560px;
   margin: 0 auto;
@@ -1649,6 +1666,25 @@ body {
 .my-rank-row {
   background: rgba(239, 246, 255, 0.65) !important;
   border-left: 3px solid #0953ff;
+}
+
+.demo-rank-row {
+  background: rgba(255, 251, 235, 0.5) !important;
+}
+
+.badge-demo-inline {
+  display: inline-flex;
+  align-items: center;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 20px;
+  border: 1.5px solid #f59e0b;
+  margin-left: 6px;
+  letter-spacing: 0.03em;
+  vertical-align: middle;
 }
 
 .btn-edit-rank-info {
