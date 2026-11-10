@@ -7,7 +7,7 @@ export const initialDoctors = [
   {
     id: "doc-adm-01",
     rank: 1,
-    name: "SAMPLE 원장",
+    name: "[DEMO] SAMPLE 원장",
     clinic: "더슬림 메디컬의원 (강남본점)",
     specialty: "복부 / 대용량 지방흡입 특화",
     licenseNo: "제58210호",
@@ -17,15 +17,16 @@ export const initialDoctors = [
     pureFatRatio: 89,
     status: "verified", // Official verified doctor
     isOfficial: true,
+    isDemo: true,
     verifiedDate: "2026-10-15",
-    badge: "CRM 전산 실시간 연동 공인",
+    badge: "CRM 전산 실시간 연동 공인 [DEMO 샘플]",
     avatar: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80",
-    note: "보건복지부 외과 전문의, EMR 수술 대장 공증 검증 완료"
+    note: "보건복지부 외과 전문의, EMR 수술 대장 공증 검증 완료 (데모 데이터)"
   },
   {
     id: "doc-adm-02",
     rank: 2,
-    name: "정우진 원장",
+    name: "[DEMO] 정우진 원장",
     clinic: "탑바디 체형성형센터",
     specialty: "허벅지 360도 둘레 특화",
     licenseNo: "제61294호",
@@ -35,15 +36,16 @@ export const initialDoctors = [
     pureFatRatio: 88,
     status: "verified",
     isOfficial: true,
+    isDemo: true,
     verifiedDate: "2026-09-20",
-    badge: "CRM 연동 공인",
+    badge: "CRM 연동 공인 [DEMO 샘플]",
     avatar: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=150&auto=format&fit=crop&q=80",
-    note: "성형외과 전문의"
+    note: "성형외과 전문의 (데모 데이터)"
   },
   {
     id: "doc-adm-03",
     rank: 3,
-    name: "강민서 원장",
+    name: "[DEMO] 강민서 원장",
     clinic: "슬림핏 라이프의원",
     specialty: "팔뚝 / 상체 라인 조각",
     licenseNo: "제63811호",
@@ -53,10 +55,11 @@ export const initialDoctors = [
     pureFatRatio: 91,
     status: "verified",
     isOfficial: true,
+    isDemo: true,
     verifiedDate: "2026-10-02",
-    badge: "CRM 연동 공인",
+    badge: "CRM 연동 공인 [DEMO 샘플]",
     avatar: "https://images.unsplash.com/photo-1594824813637-45607db7752e?w=150&auto=format&fit=crop&q=80",
-    note: "외과 전문의"
+    note: "외과 전문의 (데모 데이터)"
   }
 ];
 

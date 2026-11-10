@@ -117,6 +117,33 @@ server.listen(serverPort, async () => {
     console.log('Waiting 6 seconds for 3D models to load and render...');
     await new Promise(r => setTimeout(r, 6000));
 
+    const checkRes = await send('Runtime.evaluate', {
+      expression: `(() => {
+        const h = window.app.scene.modelHolders['lamborghini'];
+        if (!h) return 'lamborghini holder null';
+        h.updateMatrixWorld(true);
+        let minY = Infinity, maxY = -Infinity;
+        h.traverse(m => {
+          if (m.isMesh && m.geometry) {
+            m.geometry.computeBoundingBox();
+            const b = m.geometry.boundingBox;
+            const v1 = b.min.clone().applyMatrix4(m.matrixWorld);
+            const v2 = b.max.clone().applyMatrix4(m.matrixWorld);
+            minY = Math.min(minY, v1.y, v2.y);
+            maxY = Math.max(maxY, v1.y, v2.y);
+          }
+        });
+        return JSON.stringify({
+          holderPos: h.position,
+          holderScale: h.scale,
+          minY, maxY,
+          height: maxY - minY
+        });
+      })()`,
+      returnByValue: true
+    });
+    console.log('CHECK_RES_FULL:', checkRes.result?.result?.value);
+
     const snap = await send('Page.captureScreenshot', { format: 'png' });
     if (snap.result && snap.result.data) {
       fs.writeFileSync('browser_capture.png', Buffer.from(snap.result.data, 'base64'));

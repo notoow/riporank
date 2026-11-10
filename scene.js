@@ -109,10 +109,10 @@ export class LipoRankScene {
     const width = this.container.clientWidth || window.innerWidth;
     const height = this.container.clientHeight || window.innerHeight;
 
-    // Eye-level camera: centered on the core lineup, far enough to see all small-mid objects
+    // Eye-level camera: centered on the core lineup, far enough to see small-to-large objects
     this.camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 300);
-    this.camera.position.set(-3.0, 2.5, 16.0);
-    this.camera.lookAt(-3.0, 1.0, 0);
+    this.camera.position.set(4.0, 3.2, 18.5);
+    this.camera.lookAt(4.0, 1.6, 0);
 
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -338,36 +338,40 @@ export class LipoRankScene {
           holder.add(fatMesh);
           this.fatMeshes[cfg.id] = fatMesh;
 
+          // Center children geometries so holder's origin is at bottom center (ground = 0)
+          holder.position.set(0, 0, 0);
+          holder.rotation.set(0, 0, 0);
+          holder.scale.set(1, 1, 1);
+          holder.updateMatrixWorld(true);
+
+          const rawBox = new THREE.Box3().setFromObject(holder);
+          const rawCenter = rawBox.getCenter(new THREE.Vector3());
+          const rawSize = rawBox.getSize(new THREE.Vector3());
+
+          // Offset meshes inside holder so that bottom center is exactly at (0, 0, 0)
+          const offsetX = -rawCenter.x;
+          const offsetY = -rawBox.min.y;
+          const offsetZ = -rawCenter.z;
+          root.position.set(offsetX, offsetY, offsetZ);
+          fatMesh.position.set(offsetX, offsetY, offsetZ);
+
+          // 1:1 Physical Scale Normalization
+          let scale = 1.0;
+          if (cfg.targetHeight) {
+            scale = cfg.targetHeight / (rawSize.y || 1);
+          } else if (cfg.targetLength) {
+            scale = cfg.targetLength / (Math.max(rawSize.x, rawSize.z) || 1);
+          }
+          holder.scale.setScalar(scale);
+
           if (cfg.rotation) {
             holder.rotation.set(cfg.rotation[0], cfg.rotation[1], cfg.rotation[2]);
           }
 
-          // 1:1 Physical Scale Normalization
-          // Step 1: measure at position=0 to get clean local bounds
-          holder.position.set(0, 0, 0);
-          const box0 = new THREE.Box3().setFromObject(holder);
-          const size0 = box0.getSize(new THREE.Vector3());
-
-          let scale = 1.0;
-          if (cfg.targetHeight) {
-            scale = cfg.targetHeight / (size0.y || 1);
-          } else if (cfg.targetLength) {
-            scale = cfg.targetLength / (Math.max(size0.x, size0.z) || 1);
-          }
-          holder.scale.setScalar(scale);
-
-          // Step 2: re-measure after scale to get final ground offset
-          const box1 = new THREE.Box3().setFromObject(holder);
-          let groundY = 0;
-          if (cfg.id === 'lamborghini') {
-            groundY = 0.0; // Lambo origin is already wheels on ground or known offset
-          } else {
-            groundY = -box1.min.y;
-          }
-
+          // Since bottom of model is at holder origin Y=0, holder ground position is simply Y=0
           holder.position.set(
             cfg.position[0],
-            groundY,
+            0.0,
             cfg.position[2]
           );
 
@@ -394,10 +398,24 @@ export class LipoRankScene {
   }
 
   initDoctorTowers() {
+    // Height & Volume ascending order:
+    // fiji (0.5L) at -26
+    // human (70L) at -21
+    // barrel (200L) at -16.5
+    // cow (300L) at -12
+    // thinker (500L) at -7.5
+    // [DEMO] 강민서 원장 (3,200L) at -2.5
+    // [DEMO] 정우진 원장 (3,950L) at 1.0
+    // lamborghini (4,700L) at 5.5
+    // [DEMO] SAMPLE 원장 (4,820L) at 10.5
+    // cybertruck (7,100L) at 15.5
+    // tyrannosaurus (8,000L) at 23.5
+    // statue of liberty (15,000L) at 33.5
+    // swimming pool (2,500,000L) at 44.0
     const verifiedDoctors = [
-      { id: 'doc-adm-03', rank: 3, name: '강민서 원장', liters: 3200, x: -11.6, z: 0.0, badge: '공인 3위 강민서 원장' },
-      { id: 'doc-adm-02', rank: 2, name: '정우진 원장', liters: 3950, x: -9.8, z: 0.0, badge: '공인 2위 정우진 원장' },
-      { id: 'doc-adm-01', rank: 1, name: 'SAMPLE 원장', liters: 4820, x: -8.0, z: 0.0, badge: '공인 1위 SAMPLE 원장' }
+      { id: 'doc-adm-03', rank: 3, name: '강민서 원장 (DEMO)', liters: 3200, x: -2.5, z: 0.0, badge: '[DEMO] 3위 강민서 원장' },
+      { id: 'doc-adm-02', rank: 2, name: '정우진 원장 (DEMO)', liters: 3950, x:  1.0, z: 0.0, badge: '[DEMO] 2위 정우진 원장' },
+      { id: 'doc-adm-01', rank: 1, name: 'SAMPLE 원장 (DEMO)', liters: 4820, x: 10.5, z: 0.0, badge: '[DEMO] 1위 SAMPLE 원장' }
     ];
 
     verifiedDoctors.forEach(doc => {
@@ -565,8 +583,8 @@ export class LipoRankScene {
 
         // Badge pill
         ctx.fillStyle = '#e0f2fe';
-        ctx.font = '900 32px Arial, sans-serif';
-        ctx.fillText(`★ 공인 ${doctorData.rank || ''}위 ${doctorData.name}`, 256, 44);
+        ctx.font = '900 30px Arial, sans-serif';
+        ctx.fillText(`★ [DEMO] ${doctorData.rank || ''}위 ${doctorData.name}`, 256, 44);
 
         ctx.fillStyle = '#ffffff';
         ctx.font = '900 44px Arial, sans-serif';
@@ -849,37 +867,45 @@ export class LipoRankScene {
     const liters = doctorData.totalLiters || this.selectedLiters;
     const isVerified = (doctorData.status === 'verified');
     
-    // 1. Calculate appropriate target X slot based on physical height / liters rank:
-    // fiji (0.5L): x=-22
-    // barrel (200L): x=-19
-    // lambo (4700L): x=-14
-    // SAMPLE tower (4820L): x=-8.5
-    // cow (300L): x=-5
-    // human (70L vol / 1.75m height): x=-1.5
-    // cybertruck (7100L): x=4.5
-    // thinker (500L vol / 1.80m height): x=12
-    // rex (8000L): x=20
-    // statue (15000L): x=29
-    // pool (2500000L): x=38
-    let targetX = 1.0;
-    if (liters < 100) {
-      targetX = -20.5; // between fiji and barrel
-    } else if (liters < 250) {
-      targetX = -16.5; // between barrel and lambo
-    } else if (liters < 1500) {
-      targetX = -3.25; // between cow and human
-    } else if (liters < 4820) {
-      targetX = -11.0; // between lambo and official sample tower
-    } else if (liters < 6000) {
-      targetX = -6.5; // between sample tower and cow
-    } else if (liters < 7500) {
-      targetX = 1.5; // between human and cybertruck
-    } else if (liters < 12000) {
-      targetX = 8.2; // between cybertruck and thinker
-    } else if (liters < 20000) {
-      targetX = 24.5; // between rex and statue
+    // 1. Calculate appropriate target X slot based on volume rank:
+    // fiji (0.5L): -26
+    // human (70L): -21
+    // barrel (200L): -16.5
+    // cow (300L): -12
+    // thinker (500L): -7.5
+    // [DEMO] 강민서 (3200L): -2.5
+    // [DEMO] 정우진 (3950L): 1.0
+    // lambo (4700L): 5.5
+    // [DEMO] SAMPLE (4820L): 10.5
+    // cybertruck (7100L): 15.5
+    // rex (8000L): 23.5
+    // statue (15000L): 33.5
+    // pool (2500000L): 44.0
+    let targetX = 0.0;
+    if (liters <= 50) {
+      targetX = -23.5; // between fiji and human
+    } else if (liters <= 150) {
+      targetX = -18.7; // between human and barrel
+    } else if (liters <= 250) {
+      targetX = -14.2; // between barrel and cow
+    } else if (liters <= 400) {
+      targetX = -9.7; // between cow and thinker
+    } else if (liters <= 2000) {
+      targetX = -5.0; // between thinker and 강민서
+    } else if (liters <= 3500) {
+      targetX = -0.7; // between 강민서 and 정우진
+    } else if (liters <= 4300) {
+      targetX = 3.2; // between 정우진 and lambo
+    } else if (liters <= 4800) {
+      targetX = 8.0; // between lambo and SAMPLE
+    } else if (liters <= 6000) {
+      targetX = 13.0; // between SAMPLE and cybertruck
+    } else if (liters <= 7500) {
+      targetX = 19.5; // between cybertruck and rex
+    } else if (liters <= 12000) {
+      targetX = 28.5; // between rex and statue
     } else {
-      targetX = 33.5; // between statue and pool
+      targetX = 38.5; // between statue and pool
     }
     const targetZ = 0.0;
 

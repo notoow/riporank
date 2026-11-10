@@ -128,7 +128,7 @@
             <i data-lucide="chevron-right"></i>
           </button>
 
-          <!-- Real-scale Object Tabs Strip (Scrollable & with Visibility Toggles) -->
+          <!-- Real-scale Object Tabs Strip (Scrollable & with Visibility Toggles, in VOLUME ASCENDING ORDER) -->
           <div id="labels-overlay" class="stage-labels-overlay">
             <div class="object-label-tab" data-object-id="fiji_bottle">
               <button class="btn-vis-toggle" data-vis-id="fiji_bottle" title="가시성 토글">
@@ -136,6 +136,14 @@
               </button>
               <div class="label-title">생수병</div>
               <div class="label-vol">500ml · 22cm</div>
+            </div>
+
+            <div class="object-label-tab" data-object-id="human_body">
+              <button class="btn-vis-toggle" data-vis-id="human_body" title="가시성 토글">
+                <i data-lucide="eye" class="icon-xs"></i>
+              </button>
+              <div class="label-title">성인 인체</div>
+              <div class="label-vol">70L · 1.75m</div>
             </div>
 
             <div class="object-label-tab" data-object-id="new_thin_barrel">
@@ -146,6 +154,39 @@
               <div class="label-vol">200L · 88cm</div>
             </div>
 
+            <div class="object-label-tab" data-object-id="cow">
+              <button class="btn-vis-toggle" data-vis-id="cow" title="가시성 토글">
+                <i data-lucide="eye" class="icon-xs"></i>
+              </button>
+              <div class="label-title">성체 젖소</div>
+              <div class="label-vol">300L · 1.45m</div>
+            </div>
+
+            <div class="object-label-tab" data-object-id="thinker_rodin">
+              <button class="btn-vis-toggle" data-vis-id="thinker_rodin" title="가시성 토글">
+                <i data-lucide="eye" class="icon-xs"></i>
+              </button>
+              <div class="label-title">생각하는사람</div>
+              <div class="label-vol">500L · 1.8m</div>
+            </div>
+
+            <!-- Verified Doctors' Towers in Volume Order -->
+            <div class="object-label-tab doctor-tower-tab" data-object-id="doc-adm-03" title="[DEMO] 강민서 원장 탑 (클릭 시 내 수술량 비교 차오름)">
+              <button class="btn-vis-toggle" data-vis-id="doc-adm-03" title="가시성 토글">
+                <i data-lucide="eye" class="icon-xs"></i>
+              </button>
+              <div class="label-title" style="color: #0284c7; font-weight: 700;">★ [DEMO] 강민서</div>
+              <div class="label-vol">3,200L · 3.26m</div>
+            </div>
+
+            <div class="object-label-tab doctor-tower-tab" data-object-id="doc-adm-02" title="[DEMO] 정우진 원장 탑 (클릭 시 내 수술량 비교 차오름)">
+              <button class="btn-vis-toggle" data-vis-id="doc-adm-02" title="가시성 토글">
+                <i data-lucide="eye" class="icon-xs"></i>
+              </button>
+              <div class="label-title" style="color: #0284c7; font-weight: 700;">★ [DEMO] 정우진</div>
+              <div class="label-vol">3,950L · 4.08m</div>
+            </div>
+
             <div class="object-label-tab" data-object-id="lamborghini">
               <button class="btn-vis-toggle" data-vis-id="lamborghini" title="가시성 토글">
                 <i data-lucide="eye" class="icon-xs"></i>
@@ -154,28 +195,11 @@
               <div class="label-vol">4,700L · 1.16m</div>
             </div>
 
-            <!-- Verified Doctors' Towers in Height Order -->
-            <div class="object-label-tab doctor-tower-tab" data-object-id="doc-adm-03" title="강민서 원장 탑 (클릭 시 내 수술량 비교 차오름)">
-              <button class="btn-vis-toggle" data-vis-id="doc-adm-03" title="가시성 토글">
-                <i data-lucide="eye" class="icon-xs"></i>
-              </button>
-              <div class="label-title" style="color: #0284c7; font-weight: 700;">★ 강민서 원장</div>
-              <div class="label-vol">3,200L · 3.26m</div>
-            </div>
-
-            <div class="object-label-tab doctor-tower-tab" data-object-id="doc-adm-02" title="정우진 원장 탑 (클릭 시 내 수술량 비교 차오름)">
-              <button class="btn-vis-toggle" data-vis-id="doc-adm-02" title="가시성 토글">
-                <i data-lucide="eye" class="icon-xs"></i>
-              </button>
-              <div class="label-title" style="color: #0284c7; font-weight: 700;">★ 정우진 원장</div>
-              <div class="label-vol">3,950L · 4.08m</div>
-            </div>
-
-            <div class="object-label-tab doctor-tower-tab" data-object-id="doc-adm-01" title="SAMPLE 원장 탑 (클릭 시 내 수술량 비교 차오름)">
+            <div class="object-label-tab doctor-tower-tab" data-object-id="doc-adm-01" title="[DEMO] SAMPLE 원장 탑 (클릭 시 내 수술량 비교 차오름)">
               <button class="btn-vis-toggle" data-vis-id="doc-adm-01" title="가시성 토글">
                 <i data-lucide="eye" class="icon-xs"></i>
               </button>
-              <div class="label-title" style="color: #0284c7; font-weight: 700;">★ SAMPLE 원장</div>
+              <div class="label-title" style="color: #0284c7; font-weight: 700;">★ [DEMO] SAMPLE</div>
               <div class="label-vol">4,820L · 4.92m</div>
             </div>
 
@@ -188,36 +212,12 @@
               <div id="tab-my-tower-vol" class="label-vol">0L</div>
             </div>
 
-            <div class="object-label-tab" data-object-id="cow">
-              <button class="btn-vis-toggle" data-vis-id="cow" title="가시성 토글">
-                <i data-lucide="eye" class="icon-xs"></i>
-              </button>
-              <div class="label-title">성체 젖소</div>
-              <div class="label-vol">300L · 1.45m</div>
-            </div>
-
-            <div class="object-label-tab" data-object-id="human_body">
-              <button class="btn-vis-toggle" data-vis-id="human_body" title="가시성 토글">
-                <i data-lucide="eye" class="icon-xs"></i>
-              </button>
-              <div class="label-title">성인 인체</div>
-              <div class="label-vol">70L · 1.75m</div>
-            </div>
-
             <div class="object-label-tab" data-object-id="cybertruck">
               <button class="btn-vis-toggle" data-vis-id="cybertruck" title="가시성 토글">
                 <i data-lucide="eye" class="icon-xs"></i>
               </button>
               <div class="label-title">사이버트럭</div>
               <div class="label-vol">7,100L · 1.79m</div>
-            </div>
-
-            <div class="object-label-tab" data-object-id="thinker_rodin">
-              <button class="btn-vis-toggle" data-vis-id="thinker_rodin" title="가시성 토글">
-                <i data-lucide="eye" class="icon-xs"></i>
-              </button>
-              <div class="label-title">생각하는사람</div>
-              <div class="label-vol">500L · 1.8m</div>
             </div>
 
             <div class="object-label-tab" data-object-id="tyrannosaurus_rex">
