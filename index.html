@@ -36,7 +36,7 @@
           <span class="logo-text">LipoRank</span>
         </a>
 
-        <nav class="header-nav">
+        <nav class="header-nav" id="main-nav">
           <a href="#home" class="nav-link active" data-nav="home">홈</a>
           <a href="#ranking" class="nav-link" data-nav="ranking">의사 랭킹</a>
           <a href="#hospitals" class="nav-link" data-nav="hospitals">병원 찾기</a>
@@ -63,19 +63,28 @@
         <button class="btn-auth">
           로그인 / 회원가입
         </button>
+
+        <!-- Mobile Hamburger -->
+        <button class="btn-hamburger" id="btn-hamburger" title="메뉴" aria-label="메뉴 열기">
+          <i data-lucide="menu"></i>
+        </button>
       </div>
 
+    </div>
+
+    <!-- Mobile Nav Drawer -->
+    <div class="mobile-nav-drawer" id="mobile-nav-drawer">
+      <a href="#home" class="mobile-nav-link" data-nav="home">홈</a>
+      <a href="#ranking" class="mobile-nav-link" data-nav="ranking">의사 랭킹</a>
+      <a href="#hospitals" class="mobile-nav-link" data-nav="hospitals">병원 찾기</a>
+      <a href="#info" class="mobile-nav-link" data-nav="info">지방흡입 정보</a>
+      <a href="#community" class="mobile-nav-link" data-nav="community">커뮤니티</a>
+      <a href="#events" class="mobile-nav-link" data-nav="events">이벤트</a>
     </div>
   </header>
 
   <!-- 2. Main Page Layout -->
   <main class="page-wrap">
-
-    <!-- DEMO Notice Banner -->
-    <div class="demo-notice-bar">
-      <i data-lucide="flask-conical" class="icon-xs"></i>
-      <strong>DEMO 모드</strong> — 강민서·정우진·SAMPLE 원장 데이터는 모두 테스트용 가상 데이터입니다. 실제 의사 정보가 아닙니다.
-    </div>
     
     <!-- ==================== TAB 1: HOME VIEW ==================== -->
     <section id="view-home" class="tab-view active">
@@ -293,18 +302,30 @@
           </div>
         </div>
 
-        <!-- Bottom Controls Strip: "내 수술량 조절" & "[+ 내 탑 등록하기]" CTA -->
+        <!-- Bottom Controls Strip -->
         <div class="stage-bottom-strip">
-          <div class="bottom-control-header">
-            <div>
-              <span class="control-label">내 수술량 조절 (슬라이더 조절 시 3D 카메라 및 큐브 실시간 동기화)</span>
+
+          <!-- Row 1: Volume + CTA -->
+          <div class="strip-row-top">
+            <div class="vol-display-group">
+              <span class="control-label">내 수술량</span>
               <div id="current-vol-text" class="vol-big-text">4,820 L</div>
             </div>
 
-            <div class="bottom-cta-group">
-              <!-- Clinical Part Standardizer Selector (Admerest style) -->
+            <div class="strip-badges-group">
+              <!-- Clinical equiv -->
+              <div class="clinical-equiv-badge" id="clinical-equiv-badge">
+                <i data-lucide="activity" class="icon-xs"></i>
+                <span id="clinical-equiv-text">환산 집도 <strong>1,607회</strong></span>
+              </div>
+              <!-- Cube count -->
+              <div class="unit-badge">
+                <i data-lucide="box" class="icon-xs"></i>
+                <strong id="cube-count-badge">4.82개</strong> 큐브
+              </div>
+              <!-- Part selector -->
               <div class="part-standardizer-box">
-                <span class="standardizer-label"><i data-lucide="sliders" class="icon-xs"></i> 1회 수술 표준 부위:</span>
+                <span class="standardizer-label"><i data-lucide="sliders" class="icon-xs"></i> 표준 부위:</span>
                 <select id="sel-surgery-part" class="sel-surgery-part">
                   <option value="3.0" selected>복부 360도 대용량 (3.0L / 회)</option>
                   <option value="2.5">허벅지 전체 둘레 (2.5L / 회)</option>
@@ -313,46 +334,37 @@
                   <option value="0.1">이중턱/얼굴 윤곽 (0.1L / 회)</option>
                 </select>
               </div>
-
-              <!-- Standardized Cumulative Surgery Count Badge -->
-              <div class="clinical-equiv-badge" id="clinical-equiv-badge" title="선택한 부위 표준 추출량 기준 환산 총 수술 횟수">
-                <i data-lucide="activity" class="icon-xs"></i>
-                <span id="clinical-equiv-text">표준 환산 수술 횟수: <strong>1,607회</strong> (총 4,820L)</span>
-              </div>
-
-              <div class="unit-toggle">
-                <span class="unit-badge">1m³ 큐브 환산: <strong id="cube-count-badge">4.82 개 (1,000L = 1m³)</strong></span>
-              </div>
-              
-              <!-- Core CTA: 내 탑 등록하기 (Positioned prominent under 3D canvas) -->
-              <button id="btn-register-rank-bottom" class="btn-register-canvas-bottom">
-                <i data-lucide="plus-circle" class="icon-sm"></i>
-                <span>내 탑 등록하기</span>
-              </button>
             </div>
+
+            <!-- CTA -->
+            <button id="btn-register-rank-bottom" class="btn-register-canvas-bottom">
+              <i data-lucide="plus-circle" class="icon-sm"></i>
+              <span>내 탑 등록하기</span>
+            </button>
           </div>
 
+          <!-- Row 2: Slider -->
           <input type="range" id="vol-slider" class="slider-input" min="50" max="15000" step="50" value="4820">
 
-          <!-- Quick Select Chips -->
+          <!-- Row 3: Quick Chips -->
           <div class="quick-chips-row">
-            <button class="chip" data-liters="500">500L (생수병 1,000병)</button>
-            <button class="chip" data-liters="2000">2,000L (1m³ 큐브 2개)</button>
-            <button class="chip" data-liters="4700">4,700L (람보르기니 1대분)</button>
-            <button class="chip active" data-liters="4820">4,820L (1위 SAMPLE 원장)</button>
-            <button class="chip" data-liters="7100">7,100L (사이버트럭 1대분)</button>
-            <button class="chip" data-liters="15000">15,000L (자유의 여신상)</button>
+            <button class="chip" data-liters="500">500L</button>
+            <button class="chip" data-liters="2000">2,000L</button>
+            <button class="chip" data-liters="4700">4,700L · 람보</button>
+            <button class="chip active" data-liters="4820">4,820L · 1위</button>
+            <button class="chip" data-liters="7100">7,100L · 사이버트럭</button>
+            <button class="chip" data-liters="15000">15,000L · 여신상</button>
           </div>
 
-          <!-- Clinical Surgery Equivalent Guide Panel -->
+          <!-- Row 4: Clinical strip -->
           <div class="clinical-info-strip">
             <div class="clinical-pill active" id="pill-part-current">
               <span class="pill-dot abdomen"></span>
-              <span id="part-summary-formula">공식: 총 흡입량 4,820L ÷ 1회 표준 3.0L = <strong>총 1,607회 집도 실적</strong></span>
+              <span id="part-summary-formula">복부(3.0L) 기준 <strong>1,607회</strong></span>
             </div>
-            <div class="clinical-pill"><span class="pill-dot thigh"></span> 허벅지(2.5L) 기준 시: <strong id="thigh-count-text">1,928회</strong></div>
-            <div class="clinical-pill"><span class="pill-dot arm"></span> 팔뚝(1.0L) 기준 시: <strong id="arm-count-text">4,820회</strong></div>
-            <div class="clinical-pill"><span class="pill-dot chin"></span> 이중턱(0.1L) 기준 시: <strong id="chin-count-text">48,200회</strong></div>
+            <div class="clinical-pill"><span class="pill-dot thigh"></span> 허벅지 <strong id="thigh-count-text">1,928회</strong></div>
+            <div class="clinical-pill"><span class="pill-dot arm"></span> 팔뚝 <strong id="arm-count-text">4,820회</strong></div>
+            <div class="clinical-pill"><span class="pill-dot chin"></span> 이중턱 <strong id="chin-count-text">48,200회</strong></div>
           </div>
         </div>
 
@@ -405,11 +417,10 @@
         <table class="doc-table">
           <thead>
             <tr>
-              <th style="width: 70px;">순위</th>
-              <th>집도의 정보</th>
-              <th>총 누적 흡입량</th>
-              <th>1인 평균 / 순수지방률</th>
-              <th>공인 검증 상태</th>
+              <th style="width: 60px;">순위</th>
+              <th>집도의</th>
+              <th>누적 흡입량</th>
+              <th>평균 / 순수지방률</th>
             </tr>
           </thead>
           <tbody id="home-doctors-table-body">
@@ -447,11 +458,10 @@
         <table class="doc-table">
           <thead>
             <tr>
-              <th style="width: 70px;">순위</th>
-              <th>집도의 정보</th>
-              <th>총 누적 흡입량</th>
-              <th>1인 평균 / 순수지방률</th>
-              <th>공인 검증 상태</th>
+              <th style="width: 60px;">순위</th>
+              <th>집도의</th>
+              <th>누적 흡입량</th>
+              <th>평균 / 순수지방률</th>
             </tr>
           </thead>
           <tbody id="full-doctors-table-body">

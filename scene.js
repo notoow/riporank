@@ -866,63 +866,67 @@ export class LipoRankScene {
   confirmAndRegisterMyTower(doctorData) {
     const liters = doctorData.totalLiters || this.selectedLiters;
     const isVerified = (doctorData.status === 'verified');
-    
-    // 1. Calculate appropriate target X slot based on volume rank:
-    // fiji (0.5L): -26
-    // human (70L): -21
-    // barrel (200L): -16.5
-    // cow (300L): -12
-    // thinker (500L): -7.5
-    // [DEMO] 강민서 (3200L): -2.5
-    // [DEMO] 정우진 (3950L): 1.5
-    // lambo (4700L): 9.0
-    // [DEMO] SAMPLE (4820L): 14.5
-    // cybertruck (7100L): 21.0
-    // rex (8000L): 30.0
-    // statue (15000L): 43.0
-    // pool (2500000L): 57.0
-    let targetX = 0.0;
-    if (liters <= 50) {
-      targetX = -23.5; // between fiji and human
-    } else if (liters <= 150) {
-      targetX = -18.7; // between human and barrel
-    } else if (liters <= 250) {
-      targetX = -14.2; // between barrel and cow
-    } else if (liters <= 400) {
-      targetX = -9.7; // between cow and thinker
-    } else if (liters <= 2000) {
-      targetX = -5.0; // between thinker and 강민서
-    } else if (liters <= 3500) {
-      targetX = -0.7; // between 강민서 and 정우진
-    } else if (liters <= 4300) {
-      targetX = 4.0; // between 정우진 and lambo
-    } else if (liters <= 4800) {
-      targetX = 11.5; // between lambo and SAMPLE
-    } else if (liters <= 6000) {
-      targetX = 17.5; // between SAMPLE and cybertruck
-    } else if (liters <= 7500) {
-      targetX = 25.5; // between cybertruck and rex
-    } else if (liters <= 12000) {
-      targetX = 36.5; // between rex and statue
-    } else {
-      targetX = 50.0; // between statue and pool
+
+    // ── 1. 체적 오름차순 lineup 슬롯 계산 ──────────────────────────────
+    // 전체 오브젝트 목록 (scene x 위치 기준)
+    // fiji(-26) human(-21) barrel(-16.5) cow(-12) thinker(-7.5)
+    // 강민서(-2.5,3200L) 정우진(1.5,3950L) lambo(9.0,4700L) SAMPLE(14.5,4820L)
+    // cybertruck(21.0,7100L) rex(30.0,8000L) statue(43.0,15000L) pool(57.0,2.5ML)
+    //
+    // 삽입 슬롯: 나보다 작은 마지막 오브젝트와 나보다 큰 첫 오브젝트 사이 중간값
+
+    // 모든 오브젝트 (3D모델 + 의사탑)를 체적-X 쌍으로 정렬된 배열로 구성
+    const lineup = [
+      { liters: 0.5,     x: -26.0  },
+      { liters: 70,      x: -21.0  },
+      { liters: 200,     x: -16.5  },
+      { liters: 300,     x: -12.0  },
+      { liters: 500,     x:  -7.5  },
+      { liters: 3200,    x:  -2.5  }, // 강민서
+      { liters: 3950,    x:   1.5  }, // 정우진
+      { liters: 4700,    x:   9.0  }, // 람보르기니
+      { liters: 4820,    x:  14.5  }, // SAMPLE
+      { liters: 7100,    x:  21.0  }, // 사이버트럭
+      { liters: 8000,    x:  30.0  }, // 티라노
+      { liters: 15000,   x:  43.0  }, // 여신상
+      { liters: 2500000, x:  57.0  }, // 수영장
+    ];
+
+    // 나보다 작은 마지막 항목과 나보다 큰 첫 항목 사이 삽입
+    let leftX  = lineup[0].x - 4.0;
+    let rightX = lineup[0].x;
+    let placed = false;
+
+    for (let i = 0; i < lineup.length; i++) {
+      if (liters <= lineup[i].liters) {
+        // i=0 → 맨 왼쪽 삽입
+        rightX = lineup[i].x;
+        leftX  = i > 0 ? lineup[i - 1].x : lineup[0].x - 6.0;
+        placed = true;
+        break;
+      }
     }
+    if (!placed) {
+      // 가장 오른쪽 끝보다 크면 맨 오른쪽 삽입
+      leftX  = lineup[lineup.length - 1].x;
+      rightX = leftX + 8.0;
+    }
+
+    const targetX = (leftX + rightX) / 2;
     const targetZ = 0.0;
 
-    // 2. Smoothly shift neighbor objects to make room for the new tower!
-    // Shift left neighbors slightly left (-1.5m), right neighbors slightly right (+1.5m)
+    // ── 2. 이웃 오브젝트들 좌우로 밀어내기 ──────────────────────────────
     this.shiftedObjects = [];
-    const pushDist = 1.6;
+    const pushDist = 1.8;
 
-    // Shift 3D comparison models
     this.objectConfigs.forEach(cfg => {
       const holder = this.modelHolders[cfg.id];
       if (holder) {
         const origX = cfg.position[0];
         let newX = origX;
-        if (origX > targetX) {
+        if (origX > targetX + 0.1) {
           newX = origX + pushDist;
-        } else if (origX < targetX) {
+        } else if (origX < targetX - 0.1) {
           newX = origX - pushDist;
         }
         this.shiftedObjects.push({
@@ -935,12 +939,13 @@ export class LipoRankScene {
       }
     });
 
-    // Also shift all verified doctor towers
     Object.keys(this.doctorTowerGroups).forEach(docId => {
       const entry = this.doctorTowerGroups[docId];
       if (entry && entry.group) {
         const origDocX = entry.posX;
-        const newDocX = origDocX > targetX ? (origDocX + pushDist) : (origDocX - pushDist);
+        const newDocX = origDocX > targetX + 0.1
+          ? origDocX + pushDist
+          : origDocX - pushDist;
         this.shiftedObjects.push({
           obj: entry.group,
           startX: entry.group.position.x,
@@ -954,22 +959,22 @@ export class LipoRankScene {
     this.isShiftingNeighbors = true;
     this.shiftProgress = 0.0;
 
-    // 3. Build the registered tower:
+    // ── 3. 등록 탑 빌드 (프론트 스테이지에서 시작) ──────────────────────
     this.buildTowerMesh(this.registeredMyTowerGroup, liters, 0, 1.6, !isVerified, `${doctorData.name || '내'} 탑`);
     this.previewTowerGroup.visible = false;
     this.auraGroup.visible = false;
 
-    // 4. Trigger smooth slide transition
+    // ── 4. 슬라이드 애니메이션: 앞쪽(0,0,1.6) → 라인업 슬롯(targetX,0,0) ──
     this.isSlidingMyTower = true;
     this.slideProgress = 0.0;
     this.slideStartPos.set(0, 0, 1.6);
     this.slideTargetPos.set(targetX, 0, targetZ);
 
-    // 5. Pan camera to follow the registered tower smoothly
+    // ── 5. 카메라 팔로우 ─────────────────────────────────────────────────
     const cubes = Math.max(1, Math.ceil(liters / 1000));
     const targetLookY = Math.min(6.0, cubes * 0.55);
-    const camY = Math.max(2.2, targetLookY + 0.8);
-    const camZ = Math.max(6.0, 4.0 + cubes * 0.4);
+    const camY = Math.max(2.5, targetLookY + 1.0);
+    const camZ = Math.max(7.0, 5.0 + cubes * 0.4);
 
     this.startCameraTransition(
       new THREE.Vector3(targetX, camY, camZ),
@@ -1051,6 +1056,44 @@ export class LipoRankScene {
   }
 
   enterGiantView(objectId) {
+    // 1. Check if it's a doctor tower
+    if (this.doctorTowerGroups && this.doctorTowerGroups[objectId]) {
+      const docEntry = this.doctorTowerGroups[objectId];
+      const targetX = docEntry.posX;
+      const docLiters = docEntry.data.liters || 4820;
+      const cubes = Math.max(1, Math.ceil(docLiters / 1000));
+      const targetHeight = cubes * 1.02;
+
+      this.cameraMode = 'giant';
+      this.activeObjectId = objectId;
+
+      const camY = Math.max(1.8, targetHeight * 0.55);
+      const camZ = Math.max(4.5, 3.0 + cubes * 0.35);
+
+      this.startCameraTransition(
+        new THREE.Vector3(targetX, camY, camZ),
+        new THREE.Vector3(targetX, targetHeight * 0.5, 0.0)
+      );
+
+      const fakeCfg = {
+        id: objectId,
+        name: docEntry.data.name || '원장 탑',
+        volumeLiters: docLiters,
+        volumeMlText: `${docLiters.toLocaleString()}L`,
+        getGiantDetail: (userLiters) => {
+          const diff = userLiters - docLiters;
+          const diffStr = diff >= 0
+            ? `내 수술량이 <strong>+${diff.toLocaleString()}L 앞서고 있습니다!</strong> (노란색 차오름 완료)`
+            : `내 수술량과 <strong>${Math.abs(diff).toLocaleString()}L 차이</strong>가 납니다. (하단부터 노란색으로 비교 표시)`;
+          return `총 수술량 <strong>${docLiters.toLocaleString()}L</strong> (높이 약 ${targetHeight.toFixed(2)}m, 1m³ 큐브 ${cubes}개 탑). ${diffStr}`;
+        }
+      };
+
+      this.onCameraModeChange('giant', fakeCfg);
+      return;
+    }
+
+    // 2. Standard comparison objects
     const cfg = this.objectConfigs.find(c => c.id === objectId);
     if (!cfg || !cfg.heroCamPos) return;
 

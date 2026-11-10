@@ -107,13 +107,17 @@ class LipoRankApp {
     this.tabViews = document.querySelectorAll('.tab-view');
 
     const switchTab = (targetId) => {
-      document.querySelectorAll('.header-nav .nav-link').forEach(link => {
+      document.querySelectorAll('.header-nav .nav-link, .mobile-nav-drawer .mobile-nav-link').forEach(link => {
         link.classList.toggle('active', link.dataset.nav === targetId);
       });
 
       this.tabViews.forEach(view => {
         view.classList.toggle('active', view.id === `view-${targetId}`);
       });
+
+      // Close mobile drawer on navigation
+      const drawer = document.getElementById('mobile-nav-drawer');
+      if (drawer) drawer.classList.remove('open');
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
       this.refreshIcons();
@@ -123,7 +127,7 @@ class LipoRankApp {
       }
     };
 
-    this.navLinks.forEach(link => {
+    document.querySelectorAll('.header-nav .nav-link, .mobile-nav-drawer .mobile-nav-link').forEach(link => {
       link.addEventListener('click', e => {
         const target = link.dataset.nav;
         if (target) {
@@ -133,6 +137,21 @@ class LipoRankApp {
         }
       });
     });
+
+    // Mobile Hamburger Toggle
+    const hamburgerBtn = document.getElementById('btn-hamburger');
+    const drawer = document.getElementById('mobile-nav-drawer');
+    if (hamburgerBtn && drawer) {
+      hamburgerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        drawer.classList.toggle('open');
+      });
+      document.addEventListener('click', (e) => {
+        if (!drawer.contains(e.target) && !hamburgerBtn.contains(e.target)) {
+          drawer.classList.remove('open');
+        }
+      });
+    }
 
     window.addEventListener('popstate', () => {
       const hash = window.location.hash.replace('#', '') || 'home';
@@ -237,23 +256,15 @@ class LipoRankApp {
         const objId = tab.dataset.objectId;
         if (!objId) return;
 
-        // A. Verified Doctor Tower Clicked: Focus & Trigger Yellow Comparison Fill!
+        // A. Verified Doctor Tower Clicked: Focus, Zoom-in (Giant View style) & Trigger Yellow Comparison Fill!
         if (objId.startsWith('doc-adm-') || objId === 'sample_tower' || objId === 'official_tower') {
           const docId = (objId === 'sample_tower' || objId === 'official_tower') ? 'doc-adm-01' : objId;
-          const docEntry = this.scene.doctorTowerGroups ? this.scene.doctorTowerGroups[docId] : null;
-          const targetX = docEntry ? docEntry.posX : -8.5;
-          const docLiters = docEntry ? docEntry.data.liters : 4820;
-          const cubes = Math.max(1, Math.ceil(docLiters / 1000));
-          const camY = Math.max(2.2, cubes * 0.55 + 0.6);
-          const camZ = Math.max(5.5, 3.5 + cubes * 0.4);
 
           // Trigger Yellow Comparison Fill inside this blue tower!
           this.scene.setDoctorTowerComparison(docId, this.currentLiters);
 
-          this.scene.startCameraTransition(
-            new THREE.Vector3(targetX, camY, camZ),
-            new THREE.Vector3(targetX, cubes * 0.5, 0.0)
-          );
+          // Enter Giant View for this doctor's tower
+          this.scene.enterGiantView(docId);
           this.updateObjectTabs(objId);
           return;
         }
@@ -849,8 +860,8 @@ class LipoRankApp {
               <div class="doc-info-text">
                 <div class="name">
                   ${doc.name}
-                  ${isDemo ? `<span class="badge-demo-inline">DEMO</span>` : ''}
                   ${doc.isMine ? `<button class="btn-edit-rank-info" title="집도의 정보 수정"><i data-lucide="edit-2" class="icon-xs"></i> 수정</button>` : ''}
+                  ${doc.isMine && !isVerified ? `<button class="btn-row-verify"><i data-lucide="shield-check" class="icon-xs"></i> 인증</button>` : ''}
                 </div>
                 <div class="sub">${doc.clinic} · 의사면허 ${doc.licenseNo}</div>
               </div>
@@ -863,20 +874,6 @@ class LipoRankApp {
           <td>
             <strong>${doc.avgCcPerCase.toLocaleString()} cc</strong>
             <span style="font-size: 11px; color: #94a3b8; display: block;">순수지방 ${doc.pureFatRatio}%</span>
-          </td>
-          <td>
-            ${isVerified ? `
-              <span class="badge-verified">
-                <i data-lucide="shield-check" class="icon-sm"></i>
-                <span>${doc.badge}</span>
-              </span>
-            ` : `
-              <span class="badge-tag-pending">
-                <i data-lucide="clock" class="icon-xs"></i>
-                <span>${doc.badge}</span>
-              </span>
-              ${doc.isMine ? `<button class="btn-row-verify"><i data-lucide="shield-check" class="icon-xs"></i> 인증받기</button>` : ''}
-            `}
           </td>
         `;
 
